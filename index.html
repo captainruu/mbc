@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Muscle Beach Club – Uluwatu, Bali</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black: #0a0a0a;
+  --white: #f8f8f6;
+  --blue: #2ab0d8;
+  --blue-dark: #1a8aaa;
+  --blue-light: #7fd4ea;
+  --gray: #1c1c1c;
+  --gray-mid: #2e2e2e;
+  --gray-light: #888;
+  --accent: #2ab0d8;
+  --red: #c0392b;
+  --green: #27ae60;
+  --orange: #e67e22;
+  --gold: #f0c040;
+  --transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--white);overflow-x:hidden;}
+
+/* PAGES */
+.page{display:none;min-height:100vh;}
+.page.active{display:block;}
+
+/* ====== NAV ====== */
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,10,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(42,176,216,0.15);}
+.nav-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:70px;}
+.nav-logo img{height:44px;object-fit:contain;}
+.nav-links{display:flex;align-items:center;gap:2rem;}
+.nav-links a{color:var(--white);text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:0.85rem;letter-spacing:0.12em;text-transform:uppercase;transition:var(--transition);opacity:0.8;}
+.nav-links a:hover{color:var(--blue);opacity:1;}
+.nav-right{display:flex;align-items:center;gap:1rem;}
+.lang-toggle{display:flex;gap:0.3rem;}
+.lang-toggle button{background:none;border:1px solid rgba(255,255,255,0.2);color:var(--white);font-size:0.75rem;padding:0.2rem 0.5rem;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:0.08em;transition:var(--transition);}
+.lang-toggle button.active{background:var(--blue);border-color:var(--blue);}
+.login-box{display:flex;align-items:center;gap:0.5rem;}
+.login-box input{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:var(--white);padding:0.4rem 0.7rem;font-size:0.8rem;font-family:'Barlow',sans-serif;width:130px;outline:none;transition:var(--transition);}
+.login-box input:focus{border-color:var(--blue);}
+.login-box button{background:var(--blue);border:none;color:var(--white);padding:0.4rem 0.9rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.1em;cursor:pointer;transition:var(--transition);}
+.login-box button:hover{background:var(--blue-dark);}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px;}
+.hamburger span{width:24px;height:2px;background:var(--white);display:block;transition:var(--transition);}
+@media(max-width:900px){
+  .nav-links{display:none;position:absolute;top:70px;left:0;right:0;background:rgba(10,10,10,0.98);flex-direction:column;padding:1.5rem 2rem;gap:1rem;border-bottom:1px solid rgba(42,176,216,0.15);}
+  .nav-links.open{display:flex;}
+  .hamburger{display:flex;}
+  .login-box input{width:100px;}
+}
+
+/* ====== HERO SLIDER ====== */
+.hero{position:relative;height:100vh;overflow:hidden;margin-top:70px;}
+.hero-slides{position:relative;width:100%;height:100%;}
+.hero-slide{position:absolute;inset:0;opacity:0;transition:opacity 1.2s ease;background-size:cover;background-position:center;}
+.hero-slide.active{opacity:1;}
+.hero-slide::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.3) 60%,rgba(0,0,0,0.5) 100%);}
+.hero-content{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:0 6rem;z-index:2;}
+.hero-eyebrow{font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;letter-spacing:0.35em;text-transform:uppercase;color:var(--blue);margin-bottom:1rem;opacity:0;animation:fadeUp 0.8s ease 0.3s forwards;}
+.hero-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:clamp(3.5rem,8vw,7rem);line-height:0.92;text-transform:uppercase;letter-spacing:-0.01em;margin-bottom:1.5rem;opacity:0;animation:fadeUp 0.8s ease 0.5s forwards;}
+.hero-title span{color:var(--blue);}
+.hero-sub{font-size:1.05rem;font-weight:300;color:rgba(255,255,255,0.75);max-width:480px;line-height:1.65;margin-bottom:2.5rem;opacity:0;animation:fadeUp 0.8s ease 0.7s forwards;}
+.hero-btns{display:flex;gap:1rem;flex-wrap:wrap;opacity:0;animation:fadeUp 0.8s ease 0.9s forwards;}
+.btn-primary{background:var(--blue);color:var(--white);border:none;padding:0.9rem 2.2rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.95rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;transition:var(--transition);}
+.btn-primary:hover{background:var(--blue-dark);transform:translateY(-2px);}
+.btn-outline{background:transparent;color:var(--white);border:1.5px solid rgba(255,255,255,0.5);padding:0.9rem 2.2rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.95rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;transition:var(--transition);}
+.btn-outline:hover{border-color:var(--blue);color:var(--blue);}
+.hero-dots{position:absolute;bottom:2.5rem;left:6rem;display:flex;gap:0.6rem;z-index:2;}
+.hero-dot{width:28px;height:2px;background:rgba(255,255,255,0.35);cursor:pointer;transition:var(--transition);}
+.hero-dot.active{background:var(--blue);width:50px;}
+.hero-scroll{position:absolute;bottom:2.5rem;right:6rem;z-index:2;display:flex;flex-direction:column;align-items:center;gap:0.5rem;opacity:0.6;}
+.hero-scroll span{font-size:0.65rem;letter-spacing:0.25em;text-transform:uppercase;}
+.scroll-line{width:1px;height:50px;background:linear-gradient(to bottom,var(--white),transparent);animation:scrollLine 2s ease infinite;}
+@media(max-width:600px){.hero-content{padding:0 1.5rem;}.hero-dots,.hero-scroll{left:1.5rem;right:1.5rem;}}
+
+/* ====== SECTIONS ====== */
+section{padding:6rem 2rem;}
+.section-inner{max-width:1300px;margin:0 auto;}
+.section-tag{font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:0.35em;text-transform:uppercase;color:var(--blue);margin-bottom:0.8rem;}
+.section-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:clamp(2.2rem,5vw,4rem);text-transform:uppercase;line-height:0.95;margin-bottom:1.5rem;}
+.section-title span{color:var(--blue);}
+.divider{width:50px;height:2px;background:var(--blue);margin-bottom:2rem;}
+
+/* ====== ABOUT ====== */
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;}
+.about-img{position:relative;overflow:hidden;}
+.about-img img{width:100%;height:520px;object-fit:cover;display:block;filter:grayscale(20%);}
+.about-img::after{content:'';position:absolute;bottom:0;right:0;width:60%;height:3px;background:var(--blue);}
+.about-text p{font-size:1rem;line-height:1.8;color:rgba(255,255,255,0.75);margin-bottom:1.2rem;}
+.stats-row{display:flex;gap:2rem;margin-top:2rem;flex-wrap:wrap;}
+.stat{text-align:center;}
+.stat-num{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2.5rem;color:var(--blue);display:block;}
+.stat-label{font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gray-light);margin-top:0.2rem;}
+@media(max-width:768px){.about-grid{grid-template-columns:1fr;gap:2rem;}}
+
+/* ====== FACILITIES ====== */
+#facilities{background:var(--gray);}
+.facilities-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5px;background:rgba(42,176,216,0.08);}
+.facility-card{background:var(--black);overflow:hidden;cursor:pointer;transition:var(--transition);position:relative;group:;}
+.facility-card:hover{transform:scale(1.02);z-index:2;}
+.facility-img{width:100%;height:220px;object-fit:cover;display:block;filter:grayscale(30%);transition:var(--transition);}
+.facility-card:hover .facility-img{filter:grayscale(0%);transform:scale(1.05);}
+.facility-info{padding:1.2rem 1.5rem;}
+.facility-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.15rem;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.3rem;}
+.facility-desc{font-size:0.82rem;color:var(--gray-light);line-height:1.5;}
+
+/* ====== MEMBERSHIP ====== */
+.packages-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-top:2rem;}
+.package-card{background:var(--gray);border:1px solid rgba(255,255,255,0.06);padding:1.8rem 1.5rem;position:relative;transition:var(--transition);cursor:pointer;}
+.package-card:hover,.package-card.featured{border-color:var(--blue);background:rgba(42,176,216,0.06);}
+.package-card.featured::before{content:'BEST VALUE';position:absolute;top:-1px;left:50%;transform:translateX(-50%);background:var(--blue);color:var(--white);font-size:0.65rem;padding:0.2rem 0.8rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.15em;white-space:nowrap;}
+.pkg-duration{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.1rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--blue-light);margin-bottom:0.5rem;}
+.pkg-price{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;line-height:1;margin-bottom:0.4rem;}
+.pkg-price span{font-size:0.9rem;font-weight:400;color:var(--gray-light);}
+.pkg-note{font-size:0.75rem;color:var(--blue);margin-bottom:1.2rem;min-height:1.1em;}
+.pkg-register{width:100%;background:transparent;border:1.5px solid var(--blue);color:var(--blue);padding:0.6rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;transition:var(--transition);}
+.pkg-register:hover{background:var(--blue);color:var(--white);}
+
+/* SERVICES */
+.services-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem;margin-top:2rem;}
+.service-card{background:var(--gray);border-left:3px solid var(--blue);padding:1.5rem;transition:var(--transition);}
+.service-card:hover{background:rgba(42,176,216,0.06);}
+.service-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.1rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;}
+.service-price{color:var(--blue);font-weight:600;font-size:0.95rem;}
+.service-desc{font-size:0.8rem;color:var(--gray-light);margin-top:0.4rem;line-height:1.5;}
+
+/* ====== PROMO PAGE ====== */
+.promo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;margin-top:2rem;}
+.promo-card{background:var(--gray);overflow:hidden;border:1px solid rgba(42,176,216,0.12);}
+.promo-img{width:100%;height:240px;object-fit:cover;display:block;}
+.promo-body{padding:1.2rem;}
+.promo-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.1rem;text-transform:uppercase;margin-bottom:0.4rem;}
+.promo-desc{font-size:0.83rem;color:var(--gray-light);line-height:1.5;}
+.promo-badge{display:inline-block;background:var(--blue);color:var(--white);font-size:0.7rem;padding:0.15rem 0.5rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.1em;margin-bottom:0.5rem;}
+
+/* ====== CONTACT ====== */
+#contact{background:var(--gray);}
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start;}
+.contact-info p{color:rgba(255,255,255,0.7);line-height:1.8;font-size:0.95rem;margin-bottom:1rem;}
+.contact-ctas{display:flex;flex-direction:column;gap:0.8rem;margin-top:1.5rem;}
+.cta-btn{display:flex;align-items:center;gap:0.8rem;padding:0.9rem 1.4rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;border:none;transition:var(--transition);text-decoration:none;color:var(--white);}
+.cta-wa{background:#25d366;}
+.cta-ig{background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);}
+.cta-gmaps{background:#4285f4;}
+.cta-btn:hover{transform:translateX(5px);}
+.map-embed{width:100%;height:350px;border:none;filter:grayscale(40%);}
+@media(max-width:768px){.contact-grid{grid-template-columns:1fr;gap:2rem;}}
+
+/* ====== MODAL / POPUP ====== */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:2000;align-items:center;justify-content:center;padding:1rem;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:var(--gray);max-width:520px;width:100%;padding:2.5rem;position:relative;border-top:3px solid var(--blue);max-height:90vh;overflow-y:auto;}
+.modal-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--gray-light);font-size:1.5rem;cursor:pointer;transition:var(--transition);}
+.modal-close:hover{color:var(--white);}
+.modal-logo{display:flex;align-items:center;gap:0.8rem;margin-bottom:1.5rem;}
+.modal-logo img{height:40px;}
+.modal-pkg-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.1rem;text-transform:uppercase;letter-spacing:0.1em;}
+.modal-price{background:var(--green);color:var(--white);font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.8rem;padding:0.5rem 1.2rem;margin-bottom:1.5rem;display:inline-block;letter-spacing:0.05em;}
+.modal-field{margin-bottom:1.2rem;}
+.modal-field label{display:block;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:0.85rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem;color:rgba(255,255,255,0.7);}
+.modal-field input,.modal-field select,.modal-field textarea{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:var(--white);padding:0.7rem 0.9rem;font-family:'Barlow',sans-serif;font-size:0.9rem;outline:none;transition:var(--transition);}
+.modal-field input:focus,.modal-field select:focus{border-color:var(--blue);}
+.modal-field select option{background:var(--gray);color:var(--white);}
+.modal-hint{font-size:0.8rem;color:rgba(255,255,255,0.5);margin-top:0.5rem;line-height:1.5;}
+.btn-confirm{background:var(--green);color:var(--white);border:none;padding:0.9rem 2rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;width:100%;transition:var(--transition);margin-top:0.5rem;}
+.btn-confirm:hover{background:#219a52;}
+
+/* ====== MEMBER DASHBOARD ====== */
+.dashboard{min-height:100vh;padding-top:90px;padding-bottom:4rem;}
+.dash-box{max-width:700px;margin:0 auto;padding:0 1rem;}
+.dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem;}
+.dash-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;text-transform:uppercase;}
+.btn-logout{background:var(--red);color:var(--white);border:none;padding:0.6rem 1.4rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;transition:var(--transition);}
+.btn-logout:hover{background:#a93226;}
+.member-card{background:var(--gray);border:1px solid rgba(42,176,216,0.2);padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden;}
+.member-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--blue);}
+.member-status-badge{display:inline-flex;align-items:center;gap:0.4rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;padding:0.3rem 0.8rem;margin-bottom:1.2rem;}
+.status-active{background:rgba(39,174,96,0.15);color:#2ecc71;border:1px solid rgba(39,174,96,0.3);}
+.status-expired{background:rgba(192,57,43,0.15);color:#e74c3c;border:1px solid rgba(192,57,43,0.3);}
+.member-row{display:flex;justify-content:space-between;align-items:center;padding:0.7rem 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.member-row:last-child{border-bottom:none;}
+.member-label{font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray-light);}
+.member-value{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:1rem;}
+.member-id-badge{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.5rem;color:var(--blue);letter-spacing:0.1em;}
+.dash-actions{display:flex;gap:1rem;flex-wrap:wrap;}
+.btn-extend{background:var(--green);color:var(--white);border:none;padding:0.7rem 1.5rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:0.1em;cursor:pointer;transition:var(--transition);}
+.btn-extend:hover{background:#219a52;}
+.btn-new-pkg{background:var(--blue);color:var(--white);border:none;padding:0.7rem 1.5rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:0.1em;cursor:pointer;transition:var(--transition);}
+.btn-new-pkg:hover{background:var(--blue-dark);}
+.progress-bar-wrap{margin-top:1rem;}
+.progress-bar-label{display:flex;justify-content:space-between;font-size:0.75rem;color:var(--gray-light);margin-bottom:0.4rem;}
+.progress-bar{height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--blue);border-radius:2px;transition:width 1s ease;}
+
+/* ====== ADMIN DASHBOARD ====== */
+.admin-dash{min-height:100vh;padding-top:90px;padding-bottom:4rem;background:var(--black);}
+.admin-inner{max-width:1200px;margin:0 auto;padding:0 1.5rem;}
+.admin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2.5rem;flex-wrap:wrap;gap:1rem;}
+.admin-logo-row{display:flex;align-items:center;gap:1rem;}
+.admin-logo-row img{height:44px;}
+.admin-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.8rem;text-transform:uppercase;}
+.admin-tabs{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:2rem;}
+.admin-tab{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);padding:0.6rem 1.4rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:var(--transition);}
+.admin-tab.active,.admin-tab:hover{background:var(--blue);border-color:var(--blue);color:var(--white);}
+.admin-tab.danger.active,.admin-tab.danger:hover{background:var(--red);border-color:var(--red);}
+.admin-panel{display:none;}
+.admin-panel.active{display:block;}
+.admin-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+@media(max-width:700px){.admin-grid-2{grid-template-columns:1fr;}}
+.admin-card{background:var(--gray);padding:1.8rem;border-top:2px solid var(--blue);}
+.admin-card.green-top{border-color:var(--green);}
+.admin-card.orange-top{border-color:var(--orange);}
+.admin-card h3{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:1.2rem;color:rgba(255,255,255,0.8);}
+.form-row{margin-bottom:1rem;}
+.form-row label{display:block;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray-light);margin-bottom:0.3rem;}
+.form-row input,.form-row select,.form-row textarea{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:var(--white);padding:0.6rem 0.8rem;font-family:'Barlow',sans-serif;font-size:0.88rem;outline:none;transition:var(--transition);}
+.form-row input:focus,.form-row select:focus{border-color:var(--blue);}
+.form-row select option{background:#1c1c1c;}
+.form-row-inline{display:flex;gap:0.6rem;}
+.form-row-inline input{flex:1;}
+.btn-add{background:var(--green);color:var(--white);border:none;padding:0.7rem 1.5rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;transition:var(--transition);width:100%;margin-top:0.5rem;}
+.btn-add:hover{background:#219a52;}
+.btn-edit-action{background:var(--orange);color:var(--white);border:none;padding:0.7rem 1.5rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;transition:var(--transition);width:100%;margin-top:0.5rem;}
+.btn-edit-action:hover{background:#d35400;}
+.btn-download{background:var(--blue);color:var(--white);border:none;padding:0.7rem 1.5rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;letter-spacing:0.1em;cursor:pointer;transition:var(--transition);}
+.btn-download:hover{background:var(--blue-dark);}
+.member-table{width:100%;border-collapse:collapse;font-size:0.83rem;margin-top:1rem;}
+.member-table th{background:rgba(42,176,216,0.1);text-align:left;padding:0.6rem 0.8rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;font-size:0.75rem;color:var(--blue-light);}
+.member-table td{padding:0.6rem 0.8rem;border-bottom:1px solid rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);vertical-align:middle;}
+.member-table tr:hover td{background:rgba(255,255,255,0.02);}
+.td-actions{display:flex;gap:0.4rem;}
+.btn-sm{background:none;border:1px solid rgba(255,255,255,0.2);color:var(--white);padding:0.25rem 0.6rem;font-size:0.7rem;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:600;transition:var(--transition);}
+.btn-sm.blue{border-color:var(--blue);color:var(--blue);}
+.btn-sm.blue:hover{background:var(--blue);color:var(--white);}
+.btn-sm.red{border-color:var(--red);color:var(--red);}
+.btn-sm.red:hover{background:var(--red);color:var(--white);}
+.btn-sm.green{border-color:var(--green);color:var(--green);}
+.btn-sm.green:hover{background:var(--green);color:var(--white);}
+.status-pill{display:inline-block;padding:0.15rem 0.5rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;}
+.pill-active{background:rgba(39,174,96,0.2);color:#2ecc71;}
+.pill-expired{background:rgba(192,57,43,0.2);color:#e74c3c;}
+.pill-expiring{background:rgba(230,126,34,0.2);color:#f39c12;}
+.notif-bar{background:rgba(192,57,43,0.12);border:1px solid rgba(192,57,43,0.3);padding:0.8rem 1.2rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:0.8rem;}
+.notif-bar .notif-icon{color:var(--red);font-size:1.1rem;}
+.notif-bar span{font-size:0.85rem;color:rgba(255,255,255,0.8);}
+.month-filter{display:flex;align-items:center;gap:0.8rem;margin-bottom:1rem;flex-wrap:wrap;}
+.month-filter label{font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--gray-light);}
+.month-filter select{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:var(--white);padding:0.4rem 0.8rem;font-size:0.85rem;outline:none;}
+.month-filter select option{background:#1c1c1c;}
+.search-bar{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:var(--white);padding:0.6rem 1rem;font-family:'Barlow',sans-serif;font-size:0.88rem;outline:none;width:100%;margin-bottom:1rem;}
+.search-bar::placeholder{color:rgba(255,255,255,0.3);}
+.search-bar:focus{border-color:var(--blue);}
+.upload-area{border:2px dashed rgba(42,176,216,0.3);padding:2rem;text-align:center;cursor:pointer;transition:var(--transition);}
+.upload-area:hover{border-color:var(--blue);background:rgba(42,176,216,0.04);}
+.upload-area p{color:var(--gray-light);font-size:0.85rem;margin-top:0.5rem;}
+.promo-preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.8rem;margin-top:1rem;}
+.promo-preview-item{position:relative;aspect-ratio:1;}
+.promo-preview-item img{width:100%;height:100%;object-fit:cover;display:block;}
+.promo-preview-item .remove-promo{position:absolute;top:4px;right:4px;background:var(--red);color:var(--white);border:none;width:22px;height:22px;font-size:0.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.pkg-price-table{width:100%;}
+.pkg-price-table tr{border-bottom:1px solid rgba(255,255,255,0.05);}
+.pkg-price-table td{padding:0.5rem 0;font-size:0.88rem;}
+.pkg-price-table td:first-child{color:var(--gray-light);text-transform:uppercase;font-size:0.75rem;letter-spacing:0.1em;}
+.pkg-price-table input{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:var(--white);padding:0.35rem 0.6rem;font-size:0.85rem;outline:none;}
+.pkg-price-table input:focus{border-color:var(--blue);}
+.discount-row{display:flex;gap:0.5rem;align-items:center;}
+.discount-row input{width:70px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:var(--white);padding:0.35rem 0.5rem;font-size:0.85rem;outline:none;text-align:center;}
+.discount-row span{color:var(--gray-light);font-size:0.9rem;}
+
+/* ====== AI CHATBOX ====== */
+.chat-toggle{position:fixed;bottom:2rem;right:2rem;z-index:500;background:var(--blue);color:var(--white);border:none;width:58px;height:58px;border-radius:50%;font-size:1.4rem;cursor:pointer;box-shadow:0 4px 20px rgba(42,176,216,0.4);transition:var(--transition);display:flex;align-items:center;justify-content:center;}
+.chat-toggle:hover{background:var(--blue-dark);transform:scale(1.1);}
+.chat-window{position:fixed;bottom:5.5rem;right:2rem;z-index:500;width:340px;background:var(--gray);border:1px solid rgba(42,176,216,0.2);border-radius:4px;box-shadow:0 8px 40px rgba(0,0,0,0.6);display:none;flex-direction:column;max-height:480px;}
+.chat-window.open{display:flex;}
+.chat-head{background:var(--blue);padding:0.9rem 1.2rem;display:flex;align-items:center;justify-content:space-between;}
+.chat-head span{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;letter-spacing:0.08em;text-transform:uppercase;}
+.chat-head-close{background:none;border:none;color:var(--white);font-size:1.1rem;cursor:pointer;}
+.chat-messages{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:0.8rem;}
+.chat-msg{max-width:85%;padding:0.6rem 0.9rem;font-size:0.83rem;line-height:1.5;}
+.chat-msg.bot{background:rgba(255,255,255,0.06);align-self:flex-start;border-left:2px solid var(--blue);}
+.chat-msg.user{background:var(--blue);color:var(--white);align-self:flex-end;}
+.chat-input-row{display:flex;border-top:1px solid rgba(255,255,255,0.08);}
+.chat-input{flex:1;background:rgba(255,255,255,0.04);border:none;color:var(--white);padding:0.7rem 0.9rem;font-family:'Barlow',sans-serif;font-size:0.85rem;outline:none;}
+.chat-send{background:var(--blue);border:none;color:var(--white);padding:0 1rem;font-size:1rem;cursor:pointer;transition:var(--transition);}
+.chat-send:hover{background:var(--blue-dark);}
+.chat-typing{display:none;align-self:flex-start;background:rgba(255,255,255,0.06);padding:0.5rem 0.8rem;border-left:2px solid var(--blue);}
+.typing-dots{display:flex;gap:3px;align-items:center;}
+.typing-dots span{width:6px;height:6px;background:var(--blue);border-radius:50%;animation:typingDot 1.2s ease infinite;}
+.typing-dots span:nth-child(2){animation-delay:0.2s;}
+.typing-dots span:nth-child(3){animation-delay:0.4s;}
+
+/* ====== FOOTER ====== */
+footer{background:var(--gray);border-top:1px solid rgba(42,176,216,0.1);padding:2.5rem 2rem;text-align:center;}
+footer p{color:var(--gray-light);font-size:0.8rem;margin-bottom:0.3rem;}
+footer .f-brand{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1rem;letter-spacing:0.15em;color:var(--blue);margin-bottom:0.5rem;}
+
+/* ====== TOAST ====== */
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(100px);background:var(--blue);color:var(--white);padding:0.8rem 2rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:0.1em;z-index:9000;transition:transform 0.4s ease;border-radius:2px;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.error{background:var(--red);}
+.toast.success{background:var(--green);}
+
+/* ====== ANIMATIONS ====== */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+@keyframes scrollLine{0%,100%{transform:scaleY(0);transform-origin:top;}50%{transform:scaleY(1);transform-origin:top;}}
+@keyframes typingDot{0%,80%,100%{transform:scale(1);opacity:0.4;}40%{transform:scale(1.3);opacity:1;}}
+.fade-in{opacity:0;transform:translateY(30px);transition:opacity 0.7s ease,transform 0.7s ease;}
+.fade-in.visible{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="#" onclick="showPage('main');return false;">
+      <img src="https://pasteboard.co/5mVvVH7uWpEl.png" alt="Muscle Beach Club" onerror="this.style.display='none';this.nextSibling.style.display='block'">
+      <span style="display:none;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.1rem;letter-spacing:0.1em;color:var(--blue);">MBC</span>
+    </a>
+    <div class="nav-links" id="navLinks">
+      <a href="#about" onclick="showPage('main')" data-en="ABOUT" data-id="TENTANG">ABOUT</a>
+      <a href="#facilities" onclick="showPage('main')" data-en="FACILITIES" data-id="FASILITAS">FACILITIES</a>
+      <a href="#membership" onclick="showPage('main')" data-en="MEMBERSHIP" data-id="KEANGGOTAAN">MEMBERSHIP</a>
+      <a href="#contact" onclick="showPage('main')" data-en="CONTACT" data-id="KONTAK">CONTACT</a>
+      <a href="#" onclick="showPage('promo');return false;" data-en="PROMO" data-id="PROMO">PROMO</a>
+    </div>
+    <div class="nav-right">
+      <div class="lang-toggle">
+        <button class="active" onclick="setLang('en')">EN</button>
+        <button onclick="setLang('id')">ID</button>
+      </div>
+      <div class="login-box">
+        <input type="text" id="memberIdInput" placeholder="MEMBER ID" onkeydown="if(event.key==='Enter')handleLogin()">
+        <button onclick="handleLogin()" data-en="LOGIN" data-id="MASUK">LOGIN</button>
+      </div>
+      <button class="hamburger" onclick="toggleNav()">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== MAIN PAGE ===== -->
+<div class="page active" id="page-main">
+
+  <!-- HERO -->
+  <div class="hero" id="hero">
+    <div class="hero-slides">
+      <div class="hero-slide active" style="background-image:url('https://i.pinimg.com/736x/15/70/34/1570343dbaf538f9b9aa9421a4db2411.jpg')"></div>
+      <div class="hero-slide" style="background-image:url('https://i.pinimg.com/736x/6c/5c/64/6c5c643ed9a32e3d177d899470543fc5.jpg')"></div>
+      <div class="hero-slide" style="background-image:url('https://i.pinimg.com/736x/42/4a/fe/424afea7667d04b5cdf18cfe822f2cce.jpg')"></div>
+      <div class="hero-slide" style="background-image:url('https://i.pinimg.com/474x/98/51/97/985197e97b2d1e166a2c07c23be2deb5.jpg')"></div>
+      <div class="hero-slide" style="background-image:url('https://i.pinimg.com/736x/bf/9b/13/bf9b131e2fd247d629a75dc7f7c1137c.jpg')"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-eyebrow" data-en="ULUWATU, BALI — EST. 2024" data-id="ULUWATU, BALI — SEJAK 2024">ULUWATU, BALI — EST. 2024</div>
+      <h1 class="hero-title">MUSCLE<br>BEACH<br><span>CLUB</span></h1>
+      <p class="hero-sub" data-en="Your premium fitness destination at the edge of paradise. World-class facilities, expert trainers, and an unmatched atmosphere." data-id="Destinasi kebugaran premium di tepi surga. Fasilitas kelas dunia, pelatih ahli, dan suasana tak tertandingi.">Your premium fitness destination at the edge of paradise. World-class facilities, expert trainers, and an unmatched atmosphere.</p>
+      <div class="hero-btns">
+        <button class="btn-primary" onclick="scrollTo('membership')" data-en="JOIN NOW" data-id="DAFTAR SEKARANG">JOIN NOW</button>
+        <button class="btn-outline" onclick="scrollTo('about')" data-en="EXPLORE" data-id="JELAJAHI">EXPLORE</button>
+      </div>
+    </div>
+    <div class="hero-dots" id="heroDots"></div>
+    <div class="hero-scroll">
+      <div class="scroll-line"></div>
+      <span>SCROLL</span>
+    </div>
+  </div>
+
+  <!-- ABOUT -->
+  <section id="about" style="background:var(--black);">
+    <div class="section-inner">
+      <div class="about-grid fade-in">
+        <div class="about-img">
+          <img src="https://i.pinimg.com/736x/6c/5c/64/6c5c643ed9a32e3d177d899470543fc5.jpg" alt="Muscle Beach Club">
+        </div>
+        <div class="about-text">
+          <div class="section-tag" data-en="OUR STORY" data-id="CERITA KAMI">OUR STORY</div>
+          <h2 class="section-title" data-en="TRAIN AT THE<br><span>CLIFF'S EDGE</span>" data-id="BERLATIH DI<br><span>TEPI TEBING</span>">TRAIN AT THE<br><span>CLIFF'S EDGE</span></h2>
+          <div class="divider"></div>
+          <p data-en="Muscle Beach Club is Bali's premier gym experience, nestled in the dramatic clifftop landscape of Uluwatu. We combine international-standard equipment with the raw energy of Bali's surf culture." data-id="Muscle Beach Club adalah pengalaman gym premium di Bali, terletak di lanskap tebing dramatis Uluwatu. Kami memadukan peralatan berstandar internasional dengan energi mentah budaya selancar Bali.">Muscle Beach Club is Bali's premier gym experience, nestled in the dramatic clifftop landscape of Uluwatu. We combine international-standard equipment with the raw energy of Bali's surf culture.</p>
+          <p data-en="From sunrise CrossFit sessions to sunset sauna rituals, every moment here is crafted to elevate your performance and wellbeing." data-id="Dari sesi CrossFit saat matahari terbit hingga ritual sauna saat matahari terbenam, setiap momen di sini dirancang untuk meningkatkan performa dan kesejahteraan Anda.">From sunrise CrossFit sessions to sunset sauna rituals, every moment here is crafted to elevate your performance and wellbeing.</p>
+          <div class="stats-row">
+            <div class="stat"><span class="stat-num">9+</span><span class="stat-label" data-en="Facilities" data-id="Fasilitas">Facilities</span></div>
+            <div class="stat"><span class="stat-num">500+</span><span class="stat-label" data-en="Members" data-id="Anggota">Members</span></div>
+            <div class="stat"><span class="stat-num">24/7</span><span class="stat-label" data-en="Access" data-id="Akses">Access</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FACILITIES -->
+  <section id="facilities">
+    <div class="section-inner">
+      <div class="section-tag" data-en="WHAT WE OFFER" data-id="APA YANG KAMI TAWARKAN">WHAT WE OFFER</div>
+      <h2 class="section-title" data-en="WORLD-CLASS<br><span>FACILITIES</span>" data-id="FASILITAS<br><span>KELAS DUNIA</span>">WORLD-CLASS<br><span>FACILITIES</span></h2>
+      <div class="divider"></div>
+      <div class="facilities-grid" id="facilitiesGrid"></div>
+    </div>
+  </section>
+
+  <!-- MEMBERSHIP -->
+  <section id="membership" style="background:var(--black);">
+    <div class="section-inner">
+      <div class="section-tag" data-en="BECOME A MEMBER" data-id="JADI ANGGOTA">BECOME A MEMBER</div>
+      <h2 class="section-title" data-en="CHOOSE YOUR<br><span>PACKAGE</span>" data-id="PILIH<br><span>PAKET ANDA</span>">CHOOSE YOUR<br><span>PACKAGE</span></h2>
+      <div class="divider"></div>
+      <div class="packages-grid" id="packagesGrid"></div>
+
+      <div style="margin-top:4rem;">
+        <div class="section-tag" data-en="ADD-ON SERVICES" data-id="LAYANAN TAMBAHAN">ADD-ON SERVICES</div>
+        <h3 class="section-title" style="font-size:2rem;" data-en="EXTRA <span>SERVICES</span>" data-id="LAYANAN <span>EKSTRA</span>">EXTRA <span>SERVICES</span></h3>
+        <div class="divider"></div>
+        <div class="services-grid" id="servicesGrid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="section-inner">
+      <div class="section-tag" data-en="FIND US" data-id="TEMUKAN KAMI">FIND US</div>
+      <h2 class="section-title" data-en="GET IN <span>TOUCH</span>" data-id="HUBUNGI <span>KAMI</span>">GET IN <span>TOUCH</span></h2>
+      <div class="divider"></div>
+      <div class="contact-grid">
+        <div class="contact-info fade-in">
+          <p>🏖️ <strong>MUSCLE BEACH CLUB</strong></p>
+          <p>Jl. Raya Uluwatu, Pecatu,<br>Kuta Selatan, Badung, Bali 80361</p>
+          <p>📱 +62 813-3915-6003</p>
+          <p>📸 @musclebeachclub</p>
+          <div class="contact-ctas">
+            <a class="cta-btn cta-wa" href="https://wa.me/6281339156003" target="_blank">
+              <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              <span data-en="Chat on WhatsApp" data-id="Chat WhatsApp">Chat on WhatsApp</span>
+            </a>
+            <a class="cta-btn cta-ig" href="https://instagram.com/musclebeachclub" target="_blank">
+              <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+              <span data-en="Follow on Instagram" data-id="Ikuti Instagram">Follow on Instagram</span>
+            </a>
+            <a class="cta-btn cta-gmaps" href="https://maps.google.com/?q=Muscle+Beach+Club+Uluwatu+Bali" target="_blank">
+              <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C8.1 0 5 3.1 5 7c0 5.3 7 13 7 13s7-7.7 7-13c0-3.9-3.1-7-7-7zm0 9.5C10.6 9.5 9.5 8.4 9.5 7S10.6 4.5 12 4.5 14.5 5.6 14.5 7 13.4 9.5 12 9.5z"/></svg>
+              <span data-en="View on Google Maps" data-id="Lihat di Google Maps">View on Google Maps</span>
+            </a>
+          </div>
+        </div>
+        <div class="fade-in">
+          <iframe class="map-embed" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3944.5!2d115.085!3d-8.804!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zOMKwNDgnMTQuNCJTIDExNcKwMDUnMDYuMCJF!5e0!3m2!1sen!2sid!4v1" allowfullscreen="" loading="lazy"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="f-brand">MUSCLE BEACH CLUB</div>
+    <p>Jl. Raya Uluwatu, Pecatu, Kuta Selatan, Bali 80361</p>
+    <p style="margin-top:0.5rem;color:rgba(255,255,255,0.2);font-size:0.72rem;">© 2024 Muscle Beach Club. All rights reserved.</p>
+  </footer>
+</div>
+
+<!-- ===== PROMO PAGE ===== -->
+<div class="page" id="page-promo">
+  <div style="padding-top:70px;">
+    <section style="background:var(--black);">
+      <div class="section-inner">
+        <div class="section-tag" data-en="LATEST DEALS" data-id="PENAWARAN TERBARU">LATEST DEALS</div>
+        <h2 class="section-title" data-en="PROMOS &<br><span>EVENTS</span>" data-id="PROMO &<br><span>ACARA</span>">PROMOS &<br><span>EVENTS</span></h2>
+        <div class="divider"></div>
+        <div class="promo-grid" id="promoGrid"></div>
+      </div>
+    </section>
+    <footer>
+      <div class="f-brand">MUSCLE BEACH CLUB</div>
+      <p>Jl. Raya Uluwatu, Pecatu, Kuta Selatan, Bali 80361</p>
+    </footer>
+  </div>
+</div>
+
+<!-- ===== MEMBER DASHBOARD PAGE ===== -->
+<div class="page" id="page-member">
+  <div class="dashboard">
+    <div class="dash-box">
+      <div class="dash-header">
+        <div>
+          <div style="font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gray-light);margin-bottom:0.3rem;" data-en="MEMBER DASHBOARD" data-id="DASBOR ANGGOTA">MEMBER DASHBOARD</div>
+          <h2 class="dash-title" id="memberGreeting">Hello, Member</h2>
+        </div>
+        <button class="btn-logout" onclick="logout()" data-en="LOG OUT" data-id="KELUAR">LOG OUT</button>
+      </div>
+      <div class="member-card" id="memberCard"></div>
+      <div class="dash-actions">
+        <button class="btn-new-pkg" onclick="openPackageModal(null)" data-en="NEW PACKAGE" data-id="PAKET BARU">NEW PACKAGE</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADMIN DASHBOARD PAGE ===== -->
+<div class="page" id="page-admin">
+  <div class="admin-dash">
+    <div class="admin-inner">
+      <div class="admin-header">
+        <div class="admin-logo-row">
+          <img src="https://pasteboard.co/5mVvVH7uWpEl.png" alt="MBC" onerror="this.style.display='none'" style="height:44px;">
+          <div>
+            <div style="font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--gray-light);">ADMINISTRATOR</div>
+            <div class="admin-title">MUSCLE BEACH CLUB</div>
+          </div>
+        </div>
+        <button class="btn-logout" onclick="logout()">LOG OUT</button>
+      </div>
+
+      <div id="expiredNotif" class="notif-bar" style="display:none;">
+        <span class="notif-icon">⚠️</span>
+        <span id="expiredNotifText"></span>
+      </div>
+
+      <div class="admin-tabs">
+        <button class="admin-tab active" onclick="adminTab('members')">DATA MEMBER</button>
+        <button class="admin-tab" onclick="adminTab('add')">ADD MEMBER</button>
+        <button class="admin-tab" onclick="adminTab('packages')">EDIT PACKAGES</button>
+        <button class="admin-tab" onclick="adminTab('promo')">PROMO / EVENTS</button>
+        <button class="admin-tab danger" onclick="adminTab('logout')" style="margin-left:auto;">LOG OUT</button>
+      </div>
+
+      <!-- MEMBERS PANEL -->
+      <div class="admin-panel active" id="panel-members">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;">
+          <div class="month-filter">
+            <label data-en="Filter by Month:" data-id="Filter Bulan:">Filter by Month:</label>
+            <select id="monthFilter" onchange="renderMemberTable()">
+              <option value="">ALL</option>
+              <option value="1">January</option><option value="2">February</option>
+              <option value="3">March</option><option value="4">April</option>
+              <option value="5">May</option><option value="6">June</option>
+              <option value="7">July</option><option value="8">August</option>
+              <option value="9">September</option><option value="10">October</option>
+              <option value="11">November</option><option value="12">December</option>
+            </select>
+          </div>
+          <button class="btn-download" onclick="downloadCSV()">⬇ DOWNLOAD DATA</button>
+        </div>
+        <input type="text" class="search-bar" id="memberSearch" placeholder="Search by name, ID, or phone..." oninput="renderMemberTable()">
+        <div style="overflow-x:auto;">
+          <table class="member-table">
+            <thead>
+              <tr>
+                <th>ID</th><th>NAME</th><th>PHONE</th><th>PACKAGE</th>
+                <th>START</th><th>EXPIRY</th><th>DISCOUNT</th><th>STATUS</th><th>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody id="memberTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ADD MEMBER PANEL -->
+      <div class="admin-panel" id="panel-add">
+        <div class="admin-grid-2">
+          <div class="admin-card green-top">
+            <h3 data-en="ADD NEW MEMBER" data-id="TAMBAH ANGGOTA BARU">ADD NEW MEMBER</h3>
+            <div class="form-row">
+              <label>NAME</label>
+              <input type="text" id="newName" placeholder="Full name">
+            </div>
+            <div class="form-row">
+              <label>PHONE</label>
+              <input type="text" id="newPhone" placeholder="+62...">
+            </div>
+            <div class="form-row">
+              <label>PACKAGE</label>
+              <select id="newPackage" onchange="updateNewPrice()">
+              </select>
+            </div>
+            <div class="form-row">
+              <label>START DATE</label>
+              <input type="date" id="newStartDate">
+            </div>
+            <div class="form-row">
+              <label>DISCOUNT</label>
+              <div class="discount-row">
+                <input type="number" id="disc1" placeholder="0" min="0" max="100"> <span>% +</span>
+                <input type="number" id="disc2" placeholder="0" min="0" max="100"> <span>% +</span>
+                <input type="number" id="disc3" placeholder="0" min="0" max="100"> <span>%</span>
+              </div>
+            </div>
+            <div class="form-row">
+              <label>TOTAL PRICE (IDR)</label>
+              <input type="text" id="newTotal" readonly placeholder="Auto-calculated">
+            </div>
+            <button class="btn-add" onclick="addMember()">+ ADD MEMBER</button>
+          </div>
+          <div class="admin-card">
+            <h3>GENERATED MEMBER ID</h3>
+            <div id="generatedIdBox" style="background:rgba(42,176,216,0.08);border:1px solid rgba(42,176,216,0.2);padding:1.5rem;text-align:center;margin-bottom:1rem;">
+              <div style="font-size:0.75rem;letter-spacing:0.2em;color:var(--gray-light);margin-bottom:0.5rem;">MEMBER ID PREVIEW</div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:2rem;color:var(--blue);letter-spacing:0.1em;" id="idPreview">MBC-XXXX</div>
+              <div style="font-size:0.75rem;color:var(--gray-light);margin-top:0.5rem;">Generated automatically on save</div>
+            </div>
+            <p style="font-size:0.82rem;color:var(--gray-light);line-height:1.7;">Each member receives a unique code automatically. This code is used to log in to the member portal. Share it with the member after registration.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PACKAGES PANEL -->
+      <div class="admin-panel" id="panel-packages">
+        <div class="admin-grid-2">
+          <div class="admin-card">
+            <h3>MEMBERSHIP PRICES (IDR)</h3>
+            <table class="pkg-price-table" id="pkgPriceTable"></table>
+            <button class="btn-edit-action" style="margin-top:1rem;" onclick="savePrices()">SAVE PRICES</button>
+          </div>
+          <div class="admin-card orange-top">
+            <h3>GLOBAL PROMO DISCOUNT</h3>
+            <p style="font-size:0.82rem;color:var(--gray-light);line-height:1.6;margin-bottom:1rem;">Apply a general discount to all new registrations for a limited period.</p>
+            <div class="form-row">
+              <label>DISCOUNT %</label>
+              <input type="number" id="globalDiscount" value="0" min="0" max="100">
+            </div>
+            <div class="form-row">
+              <label>VALID UNTIL</label>
+              <input type="date" id="discountExpiry">
+            </div>
+            <button class="btn-edit-action" onclick="saveGlobalDiscount()">APPLY DISCOUNT</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROMO PANEL -->
+      <div class="admin-panel" id="panel-promo">
+        <div class="admin-grid-2">
+          <div class="admin-card green-top">
+            <h3>ADD PROMO / EVENT</h3>
+            <div class="form-row">
+              <label>TITLE</label>
+              <input type="text" id="promoTitle" placeholder="Promo title">
+            </div>
+            <div class="form-row">
+              <label>DESCRIPTION</label>
+              <textarea id="promoDesc" rows="3" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:var(--white);padding:0.6rem 0.8rem;font-family:'Barlow',sans-serif;font-size:0.88rem;outline:none;resize:vertical;" placeholder="Describe the promo..."></textarea>
+            </div>
+            <div class="form-row">
+              <label>IMAGE URL</label>
+              <input type="url" id="promoImgUrl" placeholder="https://...">
+            </div>
+            <div class="form-row">
+              <label>BADGE (e.g. -30%)</label>
+              <input type="text" id="promoBadge" placeholder="Optional">
+            </div>
+            <button class="btn-add" onclick="addPromo()">+ ADD PROMO</button>
+          </div>
+          <div class="admin-card">
+            <h3>CURRENT PROMOS</h3>
+            <div id="adminPromoList" style="display:flex;flex-direction:column;gap:0.8rem;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER MODAL -->
+<div class="modal-overlay" id="registerModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('registerModal')">✕</button>
+    <div class="modal-logo">
+      <img src="https://pasteboard.co/5mVvVH7uWpEl.png" alt="MBC" style="height:35px;" onerror="this.style.display='none'">
+      <div>
+        <div class="modal-pkg-name" id="modalPkgName"></div>
+        <div style="font-size:0.75rem;color:var(--gray-light);" data-en="Membership Registration" data-id="Pendaftaran Keanggotaan">Membership Registration</div>
+      </div>
+    </div>
+    <div class="modal-price" id="modalPkgPrice"></div>
+    <div class="modal-field">
+      <label data-en="YOUR NAME" data-id="NAMA ANDA">YOUR NAME</label>
+      <input type="text" id="regName" placeholder="Enter your full name">
+    </div>
+    <div class="modal-field">
+      <label data-en="PHONE NUMBER" data-id="NOMOR TELEPON">PHONE NUMBER</label>
+      <input type="text" id="regPhone" placeholder="+62...">
+    </div>
+    <div class="modal-hint" data-en="You will be redirected to our admin via WhatsApp to complete the registration process." data-id="Anda akan diarahkan ke admin kami melalui WhatsApp untuk menyelesaikan proses pendaftaran.">You will be redirected to our admin via WhatsApp to complete the registration process.</div>
+    <button class="btn-confirm" onclick="submitRegistration()" data-en="CONFIRM & CONTINUE" data-id="KONFIRMASI & LANJUTKAN">CONFIRM & CONTINUE</button>
+  </div>
+</div>
+
+<!-- EXTEND MODAL -->
+<div class="modal-overlay" id="extendModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('extendModal')">✕</button>
+    <h3 style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.5rem;text-transform:uppercase;margin-bottom:1.5rem;" data-en="EXTEND MEMBERSHIP" data-id="PERPANJANG KEANGGOTAAN">EXTEND MEMBERSHIP</h3>
+    <div class="modal-field">
+      <label data-en="SELECT PACKAGE" data-id="PILIH PAKET">SELECT PACKAGE</label>
+      <select id="extendPkg"></select>
+    </div>
+    <div class="modal-hint" data-en="Your membership will be extended from your current expiry date." data-id="Keanggotaan Anda akan diperpanjang dari tanggal kedaluwarsa saat ini.">Your membership will be extended from your current expiry date.</div>
+    <button class="btn-confirm" onclick="submitExtend()" data-en="REQUEST EXTENSION" data-id="MINTA PERPANJANGAN">REQUEST EXTENSION</button>
+  </div>
+</div>
+
+<!-- EDIT MEMBER MODAL -->
+<div class="modal-overlay" id="editMemberModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('editMemberModal')">✕</button>
+    <h3 style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.5rem;text-transform:uppercase;margin-bottom:1.5rem;">EDIT MEMBER</h3>
+    <input type="hidden" id="editMemberId">
+    <div class="modal-field"><label>NAME</label><input type="text" id="editName"></div>
+    <div class="modal-field"><label>PHONE</label><input type="text" id="editPhone"></div>
+    <div class="modal-field"><label>PACKAGE</label><select id="editPackage"></select></div>
+    <div class="modal-field"><label>START DATE</label><input type="date" id="editStart"></div>
+    <div class="modal-field"><label>EXPIRY DATE</label><input type="date" id="editExpiry"></div>
+    <div class="modal-field">
+      <label>DISCOUNT</label>
+      <div class="discount-row">
+        <input type="number" id="editDisc1" placeholder="0" min="0" max="100"> <span>% +</span>
+        <input type="number" id="editDisc2" placeholder="0" min="0" max="100"> <span>% +</span>
+        <input type="number" id="editDisc3" placeholder="0" min="0" max="100"> <span>%</span>
+      </div>
+    </div>
+    <div class="modal-field"><label>TOTAL (IDR)</label><input type="text" id="editTotal"></div>
+    <button class="btn-confirm" onclick="saveMemberEdit()">SAVE CHANGES</button>
+  </div>
+</div>
+
+<!-- CHATBOX -->
+<button class="chat-toggle" onclick="toggleChat()" title="Chat with us">💬</button>
+<div class="chat-window" id="chatWindow">
+  <div class="chat-head">
+    <span>MBC Support AI</span>
+    <button class="chat-head-close" onclick="toggleChat()">✕</button>
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="chat-msg bot" data-en="Hello! Welcome to Muscle Beach Club 💪 Ask me anything about our facilities, packages, or location!" data-id="Halo! Selamat datang di Muscle Beach Club 💪 Tanyakan apa saja tentang fasilitas, paket, atau lokasi kami!">Hello! Welcome to Muscle Beach Club 💪 Ask me anything about our facilities, packages, or location!</div>
+  </div>
+  <div class="chat-typing" id="chatTyping"><div class="typing-dots"><span></span><span></span><span></span></div></div>
+  <div class="chat-input-row">
+    <input class="chat-input" id="chatInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendChat()">
+    <button class="chat-send" onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// DATA STORE (localStorage for persistence)
+// ============================================================
+const STORAGE_KEYS = { members:'mbc_members', packages:'mbc_packages', promos:'mbc_promos', lang:'mbc_lang', gDiscount:'mbc_gdiscount' };
+
+const DEFAULT_PACKAGES = [
+  {id:'daily',name:'DAILY',price:220000,note:'',days:1},
+  {id:'2days',name:'2 DAYS',price:500000,note:'Get 1 day FREE — valid 1 week',days:2},
+  {id:'weekly',name:'WEEKLY',price:850000,note:'Get 3 days FREE',days:7},
+  {id:'1month',name:'1 MONTH',price:1200000,note:'',days:30},
+  {id:'3months',name:'3 MONTHS',price:3050000,note:'',days:90,featured:true},
+  {id:'6months',name:'6 MONTHS',price:5760000,note:'',days:180},
+  {id:'12months',name:'12 MONTHS',price:10000000,note:'',days:365},
+];
+
+const DEFAULT_PROMOS = [
+  {id:'p1',title:'Summer Burn',desc:'Join any 3-month package and get a free PT session. Limited slots!',img:'https://i.pinimg.com/736x/42/4a/fe/424afea7667d04b5cdf18cfe822f2cce.jpg',badge:'-15%'},
+  {id:'p2',title:'Couple Membership',desc:'Register with your partner and both get 10% off any 1-month package.',img:'https://i.pinimg.com/736x/6c/5c/64/6c5c643ed9a32e3d177d899470543fc5.jpg',badge:'COUPLE'},
+  {id:'p3',title:'Uluwatu Surf & Gym',desc:'Special package for surf camp guests. Show your surf pass for discount.',img:'https://i.pinimg.com/736x/15/70/34/1570343dbaf538f9b9aa9421a4db2411.jpg',badge:'COLLAB'},
+  {id:'p4',title:'Refer a Friend',desc:'Get 1 week free when you refer a friend who registers for 1 month or more.',img:'https://i.pinimg.com/736x/bf/9b/13/bf9b131e2fd247d629a75dc7f7c1137c.jpg',badge:'REFERRAL'},
+];
+
+const FACILITIES = [
+  {name:'Sauna',desc:'Traditional Finnish sauna for deep muscle recovery and relaxation.',img:'https://i.pinimg.com/736x/15/70/34/1570343dbaf538f9b9aa9421a4db2411.jpg'},
+  {name:'Infrared Sauna',desc:'Advanced infrared therapy for enhanced recovery and detoxification.',img:'https://i.pinimg.com/736x/6c/5c/64/6c5c643ed9a32e3d177d899470543fc5.jpg'},
+  {name:'Ice Bath',desc:'Cold plunge therapy to reduce inflammation and boost performance.',img:'https://i.pinimg.com/736x/42/4a/fe/424afea7667d04b5cdf18cfe822f2cce.jpg'},
+  {name:'Boxing Room',desc:'Fully equipped boxing space with heavy bags and speed bags.',img:'https://i.pinimg.com/474x/98/51/97/985197e97b2d1e166a2c07c23be2deb5.jpg'},
+  {name:'Pole Dance Studio',desc:'Professional-grade poles with sprung flooring for safe training.',img:'https://i.pinimg.com/736x/bf/9b/13/bf9b131e2fd247d629a75dc7f7c1137c.jpg'},
+  {name:'Indoor Gym',desc:'Premium equipment including free weights, machines, and cardio stations.',img:'https://i.pinimg.com/736x/15/70/34/1570343dbaf538f9b9aa9421a4db2411.jpg'},
+  {name:'Outdoor Crossfit',desc:'Functional fitness area with rigs, sleds, and open-air training.',img:'https://i.pinimg.com/736x/6c/5c/64/6c5c643ed9a32e3d177d899470543fc5.jpg'},
+  {name:'Swimming Pool',desc:'Refreshing pool perfect for recovery swims and aqua fitness.',img:'https://i.pinimg.com/736x/42/4a/fe/424afea7667d04b5cdf18cfe822f2cce.jpg'},
+  {name:'Fitbar & Protein',desc:'Post-workout nutrition bar with smoothies, protein shakes, and healthy snacks.',img:'https://i.pinimg.com/474x/98/51/97/985197e97b2d1e166a2c07c23be2deb5.jpg'},
+];
+
+const SERVICES = [
+  {name:'Personal Trainer',desc:'1-on-1 coaching tailored to your goals.',price:'Contact for rates'},
+  {name:'Pole Dance Class',desc:'375K per class per person. All levels welcome.',price:'IDR 375,000 / class / person'},
+  {name:'Pole Self Practice',desc:'Hourly rental of a pole in the studio.',price:'IDR 300,000 / hour / pole'},
+  {name:'Rent Studio',desc:'Full studio rental for private sessions.',price:'IDR 250,000 / hour'},
+  {name:'Rent Boxing Room',desc:'Private boxing room rental per person.',price:'IDR 75,000 / pax'},
+];
+
+// ============================================================
+// LOAD / SAVE DATA
+// ============================================================
+function loadData(key, def) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; }
+}
+function saveData(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+}
+
+let packages = loadData(STORAGE_KEYS.packages, DEFAULT_PACKAGES);
+let promos = loadData(STORAGE_KEYS.promos, DEFAULT_PROMOS);
+let members = loadData(STORAGE_KEYS.members, []);
+let currentLang = loadData(STORAGE_KEYS.lang, 'en');
+let gDiscount = loadData(STORAGE_KEYS.gDiscount, {pct:0,expiry:''});
+let currentMemberId = null;
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function fmt(n) { return 'IDR ' + Number(n).toLocaleString('id-ID'); }
+function fmtK(n) { return 'IDR ' + (n/1000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',') + 'K'; }
+function genId() {
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let id='MBC-';
+  for(let i=0;i<4;i++) id+=chars[Math.floor(Math.random()*chars.length)];
+  return id;
+}
+function showToast(msg, type='') {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+(type||'');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+function getPkg(id) { return packages.find(p=>p.id===id)||packages[0]; }
+function addDays(dateStr, days) {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+}
+function memberStatus(m) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const exp = new Date(m.expiry);
+  const diff = Math.ceil((exp-today)/(1000*60*60*24));
+  if(diff < 0) return 'expired';
+  if(diff <= 7) return 'expiring';
+  return 'active';
+}
+function getMemberById(id) { return members.find(m=>m.id===id); }
+function discountFactor(d1,d2,d3) {
+  const p1=(100-(+d1||0))/100;
+  const p2=(100-(+d2||0))/100;
+  const p3=(100-(+d3||0))/100;
+  return p1*p2*p3;
+}
+
+// ============================================================
+// LANGUAGE
+// ============================================================
+function setLang(lang) {
+  currentLang = lang;
+  saveData(STORAGE_KEYS.lang, lang);
+  document.querySelectorAll('.lang-toggle button').forEach(b=>b.classList.toggle('active',b.textContent===lang.toUpperCase()));
+  document.querySelectorAll('[data-en]').forEach(el=>{
+    const txt = el.getAttribute('data-'+lang);
+    if(txt) el.innerHTML = txt;
+  });
+  renderAll();
+}
+
+// ============================================================
+// PAGE ROUTING
+// ============================================================
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ============================================================
+// LOGIN
+// ============================================================
+function handleLogin() {
+  const val = document.getElementById('memberIdInput').value.trim().toUpperCase();
+  if(!val) { showToast('Please enter your Member ID','error'); return; }
+  if(val === '#ADMIN0#' || val === '#ADMIN0') {
+    document.getElementById('memberIdInput').value='';
+    showPage('admin');
+    initAdmin();
+    return;
+  }
+  const member = getMemberById(val);
+  if(member) {
+    currentMemberId = val;
+    document.getElementById('memberIdInput').value='';
+    showPage('member');
+    renderMemberDash(member);
+  } else {
+    showToast('Member ID not found','error');
+  }
+}
+function logout() { currentMemberId=null; showPage('main'); }
+
+// ============================================================
+// NAV
+// ============================================================
+function toggleNav() {
+  document.getElementById('navLinks').classList.toggle('open');
+}
+function scrollTo(id) {
+  showPage('main');
+  setTimeout(()=>{ const el=document.getElementById(id); if(el) el.scrollIntoView({behavior:'smooth'}); },100);
+}
+
+// ============================================================
+// HERO SLIDER
+// ============================================================
+let heroIdx=0;
+function initHero() {
+  const slides=document.querySelectorAll('.hero-slide');
+  const dotsEl=document.getElementById('heroDots');
+  slides.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='hero-dot'+(i===0?' active':'');
+    d.onclick=()=>goSlide(i);
+    dotsEl.appendChild(d);
+  });
+  setInterval(()=>goSlide((heroIdx+1)%slides.length),5000);
+}
+function goSlide(i) {
+  const slides=document.querySelectorAll('.hero-slide');
+  const dots=document.querySelectorAll('.hero-dot');
+  slides[heroIdx].classList.remove('active');
+  dots[heroIdx].classList.remove('active');
+  heroIdx=i;
+  slides[heroIdx].classList.add('active');
+  dots[heroIdx].classList.add('active');
+}
+
+// ============================================================
+// RENDER FACILITIES
+// ============================================================
+function renderFacilities() {
+  const grid=document.getElementById('facilitiesGrid');
+  if(!grid) return;
+  grid.innerHTML = FACILITIES.map(f=>`
+    <div class="facility-card fade-in">
+      <img class="facility-img" src="${f.img}" alt="${f.name}" loading="lazy">
+      <div class="facility-info">
+        <div class="facility-name">${f.name}</div>
+        <div class="facility-desc">${f.desc}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// RENDER PACKAGES
+// ============================================================
+function renderPackages() {
+  const grid=document.getElementById('packagesGrid');
+  if(!grid) return;
+  grid.innerHTML = packages.map(p=>`
+    <div class="package-card fade-in${p.featured?' featured':''}">
+      <div class="pkg-duration">${p.name}</div>
+      <div class="pkg-price">${(p.price/1000).toFixed(0)}K<span> IDR</span></div>
+      <div class="pkg-note">${p.note||''}</div>
+      <button class="pkg-register" onclick="openPackageModal('${p.id}')">${currentLang==='id'?'DAFTAR':'REGISTER'}</button>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// RENDER SERVICES
+// ============================================================
+function renderServices() {
+  const grid=document.getElementById('servicesGrid');
+  if(!grid) return;
+  grid.innerHTML = SERVICES.map(s=>`
+    <div class="service-card fade-in">
+      <div class="service-name">${s.name}</div>
+      <div class="service-price">${s.price}</div>
+      <div class="service-desc">${s.desc}</div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// RENDER PROMOS
+// ============================================================
+function renderPromos() {
+  const grid=document.getElementById('promoGrid');
+  if(!grid) return;
+  grid.innerHTML = promos.map(p=>`
+    <div class="promo-card fade-in">
+      <img class="promo-img" src="${p.img||'https://i.pinimg.com/736x/15/70/34/1570343dbaf538f9b9aa9421a4db2411.jpg'}" alt="${p.title}" loading="lazy">
+      <div class="promo-body">
+        ${p.badge?`<span class="promo-badge">${p.badge}</span>`:''}
+        <div class="promo-title">${p.title}</div>
+        <div class="promo-desc">${p.desc}</div>
+      </div>
+    </div>
+  `).join('');
+  initFadeIn();
+}
+
+// ============================================================
+// REGISTER MODAL
+// ============================================================
+let selectedPkgId = null;
+function openPackageModal(pkgId) {
+  selectedPkgId = pkgId;
+  const p = pkgId ? getPkg(pkgId) : packages[0];
+  document.getElementById('modalPkgName').textContent = p.name + ' MEMBERSHIP';
+  document.getElementById('modalPkgPrice').textContent = fmt(p.price);
+  document.getElementById('regName').value='';
+  document.getElementById('regPhone').value='';
+  document.getElementById('registerModal').classList.add('open');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function submitRegistration() {
+  const name=document.getElementById('regName').value.trim();
+  const phone=document.getElementById('regPhone').value.trim();
+  if(!name||!phone) { showToast('Please fill in all fields','error'); return; }
+  const p=getPkg(selectedPkgId);
+  const msg=encodeURIComponent(`Halo Admin MBC! Saya ingin mendaftar sebagai member.\n\nNama: ${name}\nNo. HP: ${phone}\nPaket: ${p.name} (${fmt(p.price)})\n\nMohon proses pendaftaran saya. Terima kasih!`);
+  closeModal('registerModal');
+  showToast('Redirecting to WhatsApp...','success');
+  setTimeout(()=>window.open(`https://wa.me/6281339156003?text=${msg}`,'_blank'),800);
+}
+
+// ============================================================
+// MEMBER DASHBOARD
+// ============================================================
+function renderMemberDash(member) {
+  const status = memberStatus(member);
+  document.getElementById('memberGreeting').textContent = (currentLang==='id'?'Halo, ':'Hello, ') + member.name;
+  const progress = calcProgress(member);
+  const card = document.getElementById('memberCard');
+  const statusClass = status==='active'?'status-active':'status-expired';
+  const statusText = status==='active'?(currentLang==='id'?'AKTIF':'ACTIVE'):(status==='expiring'?(currentLang==='id'?'HAMPIR HABIS':'EXPIRING SOON'):(currentLang==='id'?'KEDALUWARSA':'EXPIRED'));
+  card.innerHTML = `
+    <div class="member-status-badge ${statusClass}">${statusText}</div>
+    <div class="member-row"><span class="member-label">Member ID</span><span class="member-id-badge">${member.id}</span></div>
+    <div class="member-row"><span class="member-label">${currentLang==='id'?'Nama':'Name'}</span><span class="member-value">${member.name}</span></div>
+    <div class="member-row"><span class="member-label">${currentLang==='id'?'Paket':'Package'}</span><span class="member-value">${getPkg(member.packageId).name}</span></div>
+    <div class="member-row"><span class="member-label">${currentLang==='id'?'Mulai':'Start Date'}</span><span class="member-value">${member.start}</span></div>
+    <div class="member-row"><span class="member-label">${currentLang==='id'?'Berakhir':'Expiry Date'}</span><span class="member-value">${member.expiry}</span></div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-label"><span>${currentLang==='id'?'Masa Aktif':'Membership Progress'}</span><span>${progress}%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:0%" id="progressFill"></div></div>
+    </div>
+  `;
+  setTimeout(()=>{ const f=document.getElementById('progressFill'); if(f) f.style.width=progress+'%'; },100);
+  // Extend button
+  const actions=document.querySelector('.dash-actions');
+  if(actions) {
+    // populate extend modal
+    const extSel=document.getElementById('extendPkg');
+    extSel.innerHTML=packages.map(p=>`<option value="${p.id}">${p.name} — ${fmt(p.price)}</option>`).join('');
+  }
+}
+
+function calcProgress(member) {
+  const start=new Date(member.start);
+  const expiry=new Date(member.expiry);
+  const today=new Date();
+  const total=expiry-start;
+  const elapsed=today-start;
+  if(total<=0) return 100;
+  return Math.min(100,Math.max(0,Math.round((elapsed/total)*100)));
+}
+
+function openExtendModal() {
+  const extSel=document.getElementById('extendPkg');
+  extSel.innerHTML=packages.map(p=>`<option value="${p.id}">${p.name} — ${fmt(p.price)}</option>`).join('');
+  document.getElementById('extendModal').classList.add('open');
+}
+
+function submitExtend() {
+  const member=getMemberById(currentMemberId);
+  const pkgId=document.getElementById('extendPkg').value;
+  const pkg=getPkg(pkgId);
+  const msg=encodeURIComponent(`Halo Admin MBC! Saya ingin memperpanjang keanggotaan saya.\n\nMember ID: ${member.id}\nNama: ${member.name}\nPaket Baru: ${pkg.name} (${fmt(pkg.price)})\n\nMohon proses perpanjangan saya. Terima kasih!`);
+  closeModal('extendModal');
+  showToast('Redirecting to WhatsApp...','success');
+  setTimeout(()=>window.open(`https://wa.me/6281339156003?text=${msg}`,'_blank'),800);
+}
+
+// ============================================================
+// ADMIN DASHBOARD
+// ============================================================
+function initAdmin() {
+  renderMemberTable();
+  renderAdminPackages();
+  renderAdminPromos();
+  populatePackageSelects();
+  checkExpiredToday();
+}
+
+function adminTab(name) {
+  if(name==='logout'){logout();return;}
+  document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if(name==='promo') renderAdminPromos();
+}
+
+function checkExpiredToday() {
+  const today=new Date().toISOString().split('T')[0];
+  const expired=members.filter(m=>m.expiry===today||memberStatus(m)==='expired');
+  const notif=document.getElementById('expiredNotif');
+  if(expired.length>0) {
+    notif.style.display='flex';
+    document.getElementById('expiredNotifText').textContent=`${expired.length} member(s) expired or expiring today: ${expired.map(m=>m.name).join(', ')}`;
+  } else { notif.style.display='none'; }
+}
+
+function renderMemberTable() {
+  const tbody=document.getElementById('memberTableBody');
+  if(!tbody) return;
+  const search=(document.getElementById('memberSearch')||{}).value||'';
+  const month=(document.getElementById('monthFilter')||{}).value||'';
+  let list=members.filter(m=>{
+    const q=search.toLowerCase();
+    const match=!q||(m.name.toLowerCase().includes(q)||m.id.toLowerCase().includes(q)||m.phone.includes(q));
+    const mMonth=month?new Date(m.start).getMonth()+1===+month:true;
+    return match&&mMonth;
+  });
+  tbody.innerHTML=list.map(m=>{
+    const st=memberStatus(m);
+    const pillClass=st==='active'?'pill-active':st==='expiring'?'pill-expiring':'pill-expired';
+    const pkg=getPkg(m.packageId);
+    return `<tr>
+      <td style="font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--blue);letter-spacing:0.08em;">${m.id}</td>
+      <td>${m.name}</td><td>${m.phone}</td>
+      <td>${pkg.name}</td><td>${m.start}</td><td>${m.expiry}</td>
+      <td>${m.discount||'—'}</td>
+      <td><span class="status-pill ${pillClass}">${st.toUpperCase()}</span></td>
+      <td><div class="td-actions">
+        <button class="btn-sm blue" onclick="openEditMember('${m.id}')">EDIT</button>
+        <button class="btn-sm red" onclick="deleteMember('${m.id}')">DEL</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function populatePackageSelects() {
+  const ids=['newPackage','editPackage'];
+  ids.forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel) return;
+    sel.innerHTML=packages.map(p=>`<option value="${p.id}">${p.name} — ${fmt(p.price)}</option>`).join('');
+  });
+  updateNewPrice();
+}
+
+function updateNewPrice() {
+  const pkgId=(document.getElementById('newPackage')||{}).value;
+  if(!pkgId) return;
+  const pkg=getPkg(pkgId);
+  const d1=document.getElementById('disc1').value;
+  const d2=document.getElementById('disc2').value;
+  const d3=document.getElementById('disc3').value;
+  const factor=discountFactor(d1,d2,d3);
+  const total=Math.round(pkg.price*factor);
+  document.getElementById('newTotal').value=fmt(total);
+  // auto fill start date
+  if(!document.getElementById('newStartDate').value) {
+    document.getElementById('newStartDate').value=new Date().toISOString().split('T')[0];
+  }
+  // update expiry preview
+  const start=document.getElementById('newStartDate').value||new Date().toISOString().split('T')[0];
+  const expiry=addDays(start,pkg.days);
+  document.getElementById('idPreview').textContent='MBC-XXXX';
+}
+
+function addMember() {
+  const name=document.getElementById('newName').value.trim();
+  const phone=document.getElementById('newPhone').value.trim();
+  const pkgId=document.getElementById('newPackage').value;
+  const start=document.getElementById('newStartDate').value;
+  const d1=document.getElementById('disc1').value||0;
+  const d2=document.getElementById('disc2').value||0;
+  const d3=document.getElementById('disc3').value||0;
+  if(!name||!phone||!start) { showToast('Fill all required fields','error'); return; }
+  const pkg=getPkg(pkgId);
+  const expiry=addDays(start,pkg.days);
+  let id; do { id=genId(); } while(members.find(m=>m.id===id));
+  const factor=discountFactor(d1,d2,d3);
+  const total=Math.round(pkg.price*factor);
+  const member={id,name,phone,packageId:pkgId,start,expiry,discount:`${d1}%+${d2}%+${d3}%`,total,createdAt:new Date().toISOString()};
+  members.push(member);
+  saveData(STORAGE_KEYS.members,members);
+  document.getElementById('idPreview').textContent=id;
+  document.getElementById('newName').value='';
+  document.getElementById('newPhone').value='';
+  document.getElementById('newStartDate').value='';
+  document.getElementById('disc1').value='';
+  document.getElementById('disc2').value='';
+  document.getElementById('disc3').value='';
+  document.getElementById('newTotal').value='';
+  showToast(`Member ${name} added! ID: ${id}`,'success');
+  renderMemberTable();
+  checkExpiredToday();
+}
+
+function deleteMember(id) {
+  if(!confirm('Delete member '+id+'?')) return;
+  members=members.filter(m=>m.id!==id);
+  saveData(STORAGE_KEYS.members,members);
+  renderMemberTable();
+  showToast('Member deleted','error');
+}
+
+function openEditMember(id) {
+  const m=getMemberById(id);
+  if(!m) return;
+  document.getElementById('editMemberId').value=m.id;
+  document.getElementById('editName').value=m.name;
+  document.getElementById('editPhone').value=m.phone;
+  document.getElementById('editStart').value=m.start;
+  document.getElementById('editExpiry').value=m.expiry;
+  document.getElementById('editTotal').value=m.total?fmt(m.total):'';
+  // discount
+  const discs=(m.discount||'0%+0%+0%').replace(/%/g,'').split('+');
+  document.getElementById('editDisc1').value=discs[0]||0;
+  document.getElementById('editDisc2').value=discs[1]||0;
+  document.getElementById('editDisc3').value=discs[2]||0;
+  const sel=document.getElementById('editPackage');
+  sel.innerHTML=packages.map(p=>`<option value="${p.id}"${p.id===m.packageId?' selected':''}>${p.name} — ${fmt(p.price)}</option>`).join('');
+  document.getElementById('editMemberModal').classList.add('open');
+}
+
+function saveMemberEdit() {
+  const id=document.getElementById('editMemberId').value;
+  const idx=members.findIndex(m=>m.id===id);
+  if(idx<0) return;
+  const d1=document.getElementById('editDisc1').value||0;
+  const d2=document.getElementById('editDisc2').value||0;
+  const d3=document.getElementById('editDisc3').value||0;
+  members[idx]={
+    ...members[idx],
+    name:document.getElementById('editName').value.trim(),
+    phone:document.getElementById('editPhone').value.trim(),
+    packageId:document.getElementById('editPackage').value,
+    start:document.getElementById('editStart').value,
+    expiry:document.getElementById('editExpiry').value,
+    discount:`${d1}%+${d2}%+${d3}%`,
+    total:document.getElementById('editTotal').value,
+  };
+  saveData(STORAGE_KEYS.members,members);
+  closeModal('editMemberModal');
+  renderMemberTable();
+  showToast('Member updated','success');
+}
+
+function renderAdminPackages() {
+  const table=document.getElementById('pkgPriceTable');
+  if(!table) return;
+  table.innerHTML=`<thead><tr><th style="padding:0.5rem 0;font-size:0.7rem;color:var(--blue-light);">PACKAGE</th><th style="padding:0.5rem 0;font-size:0.7rem;color:var(--blue-light);">PRICE (IDR)</th></tr></thead><tbody>`+
+    packages.map(p=>`<tr><td>${p.name}</td><td><input type="number" value="${p.price}" data-pkgid="${p.id}" onchange="updatePkgPreview('${p.id}',this.value)"></td></tr>`).join('') + '</tbody>';
+}
+
+function updatePkgPreview(id, val) {}
+
+function savePrices() {
+  document.querySelectorAll('#pkgPriceTable input[data-pkgid]').forEach(inp=>{
+    const id=inp.getAttribute('data-pkgid');
+    const idx=packages.findIndex(p=>p.id===id);
+    if(idx>=0) packages[idx].price=+inp.value;
+  });
+  saveData(STORAGE_KEYS.packages,packages);
+  renderPackages();
+  populatePackageSelects();
+  showToast('Prices saved!','success');
+}
+
+function saveGlobalDiscount() {
+  gDiscount={pct:+document.getElementById('globalDiscount').value, expiry:document.getElementById('discountExpiry').value};
+  saveData(STORAGE_KEYS.gDiscount,gDiscount);
+  showToast('Global discount saved!','success');
+}
+
+function downloadCSV() {
+  const month=(document.getElementById('monthFilter')||{}).value||'';
+  let list=month?members.filter(m=>new Date(m.start).getMonth()+1===+month):members;
+  const header='ID,Name,Phone,Package,Start,Expiry,Discount,Total,Status\n';
+  const rows=list.map(m=>`${m.id},${m.name},${m.phone},${getPkg(m.packageId).name},${m.start},${m.expiry},${m.discount||''},${m.total||''},${memberStatus(m)}`).join('\n');
+  const blob=new Blob([header+rows],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`MBC_Members${month?'_Month'+month:''}.csv`;
+  a.click();
+  showToast('Downloaded!','success');
+}
+
+function renderAdminPromos() {
+  const list=document.getElementById('adminPromoList');
+  if(!list) return;
+  list.innerHTML=promos.map(p=>`
+    <div style="display:flex;gap:0.8rem;align-items:center;background:rgba(255,255,255,0.03);padding:0.6rem;">
+      <img src="${p.img||''}" style="width:60px;height:60px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.9rem;">${p.title}</div>
+        <div style="font-size:0.75rem;color:var(--gray-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.desc}</div>
+      </div>
+      <button class="btn-sm red" onclick="removePromo('${p.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function addPromo() {
+  const title=document.getElementById('promoTitle').value.trim();
+  const desc=document.getElementById('promoDesc').value.trim();
+  const img=document.getElementById('promoImgUrl').value.trim();
+  const badge=document.getElementById('promoBadge').value.trim();
+  if(!title) { showToast('Enter a title','error'); return; }
+  const id='p'+Date.now();
+  promos.push({id,title,desc,img,badge});
+  saveData(STORAGE_KEYS.promos,promos);
+  document.getElementById('promoTitle').value='';
+  document.getElementById('promoDesc').value='';
+  document.getElementById('promoImgUrl').value='';
+  document.getElementById('promoBadge').value='';
+  renderAdminPromos();
+  renderPromos();
+  showToast('Promo added!','success');
+}
+
+function removePromo(id) {
+  promos=promos.filter(p=>p.id!==id);
+  saveData(STORAGE_KEYS.promos,promos);
+  renderAdminPromos();
+  renderPromos();
+  showToast('Promo removed');
+}
+
+// ============================================================
+// CHATBOX AI
+// ============================================================
+const chatKB = [
+  {q:['price','harga','cost','berapa','package','paket'], a:'Our packages start from IDR 220K for a day pass, up to IDR 10M for an annual membership. Type "packages" for the full list!'},
+  {q:['packages','paket lengkap','list'], a:'📦 Our packages:\n• Daily: IDR 220K\n• 2 Days: IDR 500K\n• Weekly: IDR 850K\n• 1 Month: IDR 1.2M\n• 3 Months: IDR 3.05M\n• 6 Months: IDR 5.76M\n• 12 Months: IDR 10M'},
+  {q:['facility','fasilitas','facilities','sauna','pool'], a:'🏋️ Our facilities include: Sauna, Infrared Sauna, Ice Bath, Boxing Room, Pole Dance Studio, Indoor Gym, Outdoor CrossFit, Swimming Pool, and Fitbar & Protein bar!'},
+  {q:['location','lokasi','where','address','alamat','uluwatu'], a:'📍 We are located at Jl. Raya Uluwatu, Pecatu, Kuta Selatan, Badung, Bali 80361. Near the Uluwatu cliffs!'},
+  {q:['contact','kontak','phone','telp','wa','whatsapp'], a:'📞 Call/WhatsApp us at +62 813-3915-6003 or follow us on Instagram @musclebeachclub'},
+  {q:['pole','dance','studio'], a:'🩰 Pole Dance Class: IDR 375K/class/person\nPole Self Practice: IDR 300K/hour/pole\nStudio Rental: IDR 250K/hour'},
+  {q:['boxing','tinju'], a:'🥊 Boxing Room rental is IDR 75K per person. We also have personal trainers available!'},
+  {q:['trainer','pt','personal'], a:'💪 We have certified Personal Trainers available. Contact us via WhatsApp for scheduling and rates!'},
+  {q:['open','buka','hours','jam'], a:'⏰ We are open daily! Contact us on WhatsApp for exact operating hours.'},
+  {q:['promo','discount','diskon','deal'], a:'🎉 Check our Promos page for the latest deals! We regularly have partner discounts and event packages.'},
+  {q:['join','register','daftar','member'], a:'To join, click "JOIN NOW" or any "REGISTER" button on the membership section, fill in your details, and we\'ll connect you with our admin via WhatsApp!'},
+  {q:['hi','hello','halo','hay','hey'], a:'Hello there! 👋 Welcome to Muscle Beach Club. How can I help you today?'},
+];
+
+function toggleChat() {
+  document.getElementById('chatWindow').classList.toggle('open');
+}
+
+function sendChat() {
+  const input=document.getElementById('chatInput');
+  const msg=input.value.trim();
+  if(!msg) return;
+  appendChat(msg,'user');
+  input.value='';
+  const typing=document.getElementById('chatTyping');
+  typing.style.display='block';
+  document.getElementById('chatMessages').appendChild(typing);
+  setTimeout(()=>{
+    typing.style.display='none';
+    const reply=getBotReply(msg);
+    appendChat(reply,'bot');
+  }, 900+Math.random()*600);
+}
+
+function getBotReply(msg) {
+  const lower=msg.toLowerCase();
+  for(const item of chatKB) {
+    if(item.q.some(k=>lower.includes(k))) return item.a;
+  }
+  return "I'm not sure about that! 😊 For detailed info, please contact us via WhatsApp at +62 813-3915-6003 or visit us in Uluwatu!";
+}
+
+function appendChat(msg, role) {
+  const messages=document.getElementById('chatMessages');
+  const div=document.createElement('div');
+  div.className='chat-msg '+role;
+  div.style.whiteSpace='pre-line';
+  div.textContent=msg;
+  messages.appendChild(div);
+  messages.scrollTop=messages.scrollHeight;
+}
+
+// ============================================================
+// SCROLL FADE IN
+// ============================================================
+function initFadeIn() {
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{ if(e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  },{threshold:0.1});
+  document.querySelectorAll('.fade-in').forEach(el=>obs.observe(el));
+}
+
+// ============================================================
+// RENDER ALL
+// ============================================================
+function renderAll() {
+  renderFacilities();
+  renderPackages();
+  renderServices();
+  renderPromos();
+  initFadeIn();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded',()=>{
+  initHero();
+  renderAll();
+  setLang(currentLang);
+  // Set today as default start date for new member
+  const nd=document.getElementById('newStartDate');
+  if(nd) nd.value=new Date().toISOString().split('T')[0];
+  // discount inputs
+  ['disc1','disc2','disc3'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('input',updateNewPrice);
+  });
+  const np=document.getElementById('newPackage');
+  if(np) np.addEventListener('change',updateNewPrice);
+  const ns=document.getElementById('newStartDate');
+  if(ns) ns.addEventListener('change',updateNewPrice);
+});
+</script>
+</body>
+</html>
