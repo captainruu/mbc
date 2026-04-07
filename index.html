@@ -181,7 +181,7 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:3rem 0 
 
 /* LOGIN PAGE */
 #login-page{display:none;min-height:100vh;align-items:center;justify-content:center;background:var(--black);}
-#login-page.active{display:flex;}
+#login-page.active{display:flex!important;}
 .login-box{background:var(--dark2);border:1px solid var(--border);padding:3rem;width:100%;max-width:440px;text-align:center;}
 .login-logo{margin-bottom:2rem;}
 .login-logo img{height:50px;}
@@ -189,8 +189,8 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:3rem 0 
 .login-sub{font-size:14px;color:var(--gray);margin-bottom:2rem;}
 
 /* MEMBER DASHBOARD */
-#member-page{display:none;min-height:100vh;background:var(--black);padding-top:80px;}
-#member-page.active{display:block;}
+#member-page{display:none!important;min-height:100vh;background:var(--black);padding-top:80px;}
+#member-page.active{display:block!important;}
 .dash-header{background:var(--dark);border-bottom:1px solid var(--border);padding:2rem 0;}
 .dash-title{font-family:var(--font-head);font-size:48px;}
 .member-card{background:var(--dark2);border:1px solid var(--border);padding:2.5rem;margin-top:2rem;}
@@ -208,8 +208,8 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:3rem 0 
 #qr-container{background:white;display:inline-block;padding:16px;}
 
 /* ADMIN DASHBOARD */
-#admin-page{display:none;min-height:100vh;background:var(--black);}
-#admin-page.active{display:flex;}
+#admin-page{display:none!important;min-height:100vh;background:var(--black);}
+#admin-page.active{display:flex!important;}
 .admin-sidebar{width:240px;background:var(--dark);border-right:1px solid var(--border);padding:1.5rem 0;position:fixed;top:0;bottom:0;overflow-y:auto;}
 .admin-sidebar .logo{padding:1rem 1.5rem 2rem;}
 .admin-sidebar .logo img{height:36px;}
@@ -276,10 +276,51 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:3rem 0 
   .pkg-grid{grid-template-columns:1fr;}
   .fac-grid{grid-template-columns:1fr;}
   .promo-grid{grid-template-columns:1fr;}
-  .admin-sidebar{width:60px;overflow:hidden;}
-  .admin-nav li a span,.admin-nav li button span,.admin-sidebar .logo img{display:none;}
-  .admin-main{margin-left:60px;}
+  .member-meta{grid-template-columns:repeat(2,1fr);}
+  /* Admin bottom nav on mobile */
+  .admin-sidebar{
+    width:100%;height:58px;
+    position:fixed;top:auto;bottom:0;left:0;right:0;
+    border-right:none;border-top:1px solid var(--border);
+    padding:0;overflow:hidden;z-index:150;
+    display:flex;flex-direction:column;
+    background:var(--dark);
+  }
+  .admin-sidebar .logo{display:none;}
+  .admin-nav{
+    display:flex;flex-direction:row;
+    height:58px;overflow-x:auto;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  }
+  .admin-nav::-webkit-scrollbar{display:none;}
+  .admin-nav li{flex-shrink:0;}
+  .admin-nav li a,
+  .admin-nav li button{
+    flex-direction:column;gap:2px;
+    padding:4px 12px;height:58px;
+    font-size:9px;letter-spacing:.5px;
+    justify-content:center;align-items:center;
+    border-left:none!important;
+    border-top:2px solid transparent;
+  }
+  .admin-nav li a.active,
+  .admin-nav li button.active{
+    background:rgba(74,179,232,0.08);
+    border-left:none!important;
+    border-top:2px solid var(--blue);
+    color:var(--blue);
+  }
+  .admin-nav li a span:first-child,
+  .admin-nav li button span:first-child{font-size:20px;line-height:1;}
+  .admin-main{
+    margin-left:0;
+    padding:1rem;
+    padding-bottom:74px;
+  }
   .admin-stats{grid-template-columns:repeat(2,1fr);}
+  .admin-top{flex-wrap:wrap;gap:.5rem;}
+  .admin-page-title{font-size:26px;}
+  .admin-table td,.admin-table th{padding:.5rem .6rem;font-size:12px;}
 }
 
 /* MAIN SITE VISIBILITY */
@@ -1009,7 +1050,8 @@ function doLogin(){
   }
   // Member login
   const members=getMembers();
-  const m=members.find(x=>x.code===code.toUpperCase());
+  const normLogin=normCode(code);
+  const m=members.find(x=>normCode(x.code)===normLogin);
   if(!m){showToast('Invalid code. Please try again.');return;}
   currentUser=m;
   document.getElementById('login-page').classList.remove('active');
@@ -1250,10 +1292,16 @@ function deleteMember(code){
   renderOverview();
   showToast('Member deleted');
 }
+function normCode(raw){
+  // Accept codes with/without dashes, extra spaces, lowercase
+  return (raw||'').trim().toUpperCase().replace(/\s+/g,'');
+}
 function scanMember(){
-  const code=document.getElementById('scanCode').value.trim().toUpperCase();
+  const raw=document.getElementById('scanCode').value;
+  const code=normCode(raw);
   const members=getMembers();
-  const m=members.find(x=>x.code===code);
+  // Try exact match first, then normalised match
+  const m=members.find(x=>x.code===code)||members.find(x=>normCode(x.code)===code);
   const res=document.getElementById('scanResult');
   if(!m){res.innerHTML=`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);padding:1rem;font-size:13px;color:#ef4444;">Member not found: ${code}</div>`;return;}
   const today=new Date();today.setHours(0,0,0,0);
@@ -1425,17 +1473,19 @@ function tickScanner() {
 }
 
 function onCodeScanned(raw) {
-  const code = raw.trim().toUpperCase();
-  document.getElementById('scanStatus').textContent = '✓ Code detected: ' + code;
+  const code = normCode(raw);
+  const inp = document.getElementById('scanCode');
+  inp.value = code;
+  document.getElementById('scanStatus').textContent = '\u2713 Code detected: ' + code;
   document.getElementById('scanStatus').style.color = '#22c55e';
   setTimeout(() => {
-    document.getElementById('scanStatus').textContent = 'Scanning… point camera at QR code';
-    document.getElementById('scanStatus').style.color = 'var(--blue)';
+    if(document.getElementById('scanStatus')){
+      document.getElementById('scanStatus').textContent = 'Scanning\u2026 point camera at QR code';
+      document.getElementById('scanStatus').style.color = 'var(--blue)';
+    }
   }, 2500);
-  // Fill manual input and trigger lookup
-  document.getElementById('scanCode').value = code;
-  scanMember();
-  // Vibrate on mobile
+  // Slight delay so input value is committed before lookup
+  setTimeout(scanMember, 50);
   if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
 }
 
