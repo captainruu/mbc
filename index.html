@@ -6,6 +6,10 @@
 <title>Muscle Beach Club – Uluwatu, Bali</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<style>
+@keyframes scanAnim{0%{top:4px;}50%{top:calc(100% - 6px);}100%{top:4px;}}
+</style>
 <style>
 :root {
   --black: #0a0a0a;
@@ -743,11 +747,49 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:3rem 0 
     <!-- SCAN -->
     <div id="admin-scan" style="display:none;">
       <div class="admin-top"><h2 class="admin-page-title">Scan QR / Barcode</h2></div>
+
+      <!-- CAMERA SCANNER -->
+      <div class="admin-section" style="margin-bottom:1.5rem;">
+        <div class="admin-section-head">
+          <span class="admin-section-title">📷 Camera Scanner</span>
+          <div style="display:flex;gap:.5rem;">
+            <button class="btn btn-primary btn-sm" id="startScanBtn" onclick="startScanner()">Start Camera</button>
+            <button class="btn btn-outline btn-sm" id="stopScanBtn" onclick="stopScanner()" style="display:none;">Stop Camera</button>
+            <button class="btn btn-outline btn-sm" id="flipCamBtn" onclick="flipCamera()" style="display:none;">Flip Camera</button>
+          </div>
+        </div>
+        <div style="padding:1.5rem;">
+          <!-- Camera viewfinder -->
+          <div id="scannerWrap" style="display:none;position:relative;max-width:400px;margin:0 auto 1rem;">
+            <video id="scanVideo" autoplay playsinline muted style="width:100%;border:2px solid var(--blue3);display:block;background:#000;"></video>
+            <canvas id="scanCanvas" style="display:none;"></canvas>
+            <!-- Targeting overlay -->
+            <div style="position:absolute;inset:0;pointer-events:none;">
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;">
+                <div style="position:absolute;top:0;left:0;width:32px;height:32px;border-top:3px solid var(--blue);border-left:3px solid var(--blue);"></div>
+                <div style="position:absolute;top:0;right:0;width:32px;height:32px;border-top:3px solid var(--blue);border-right:3px solid var(--blue);"></div>
+                <div style="position:absolute;bottom:0;left:0;width:32px;height:32px;border-bottom:3px solid var(--blue);border-left:3px solid var(--blue);"></div>
+                <div style="position:absolute;bottom:0;right:0;width:32px;height:32px;border-bottom:3px solid var(--blue);border-right:3px solid var(--blue);"></div>
+                <div id="scanLine" style="position:absolute;top:0;left:4px;right:4px;height:2px;background:var(--blue);opacity:.8;animation:scanAnim 2s linear infinite;"></div>
+              </div>
+            </div>
+            <div id="scanStatus" style="text-align:center;padding:.6rem;font-family:var(--font-cond);font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);background:rgba(0,0,0,.6);">Scanning… point camera at QR code</div>
+          </div>
+          <!-- No camera notice -->
+          <div id="noCameraNotice" style="display:none;background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.2);padding:1rem;font-size:13px;color:#eab308;">
+            ⚠ Camera not available or permission denied. Please use manual lookup below.
+          </div>
+        </div>
+      </div>
+
+      <!-- MANUAL LOOKUP -->
       <div class="admin-section">
-        <div class="admin-section-head"><span class="admin-section-title">Manual Code Lookup</span></div>
+        <div class="admin-section-head"><span class="admin-section-title">⌨ Manual Code Lookup</span></div>
         <div style="padding:2rem;max-width:400px;">
-          <p style="font-size:13px;color:var(--gray);margin-bottom:1.5rem;">Enter or scan the member code below to check in.</p>
-          <div class="form-group"><label>Member Code</label><input type="text" id="scanCode" placeholder="MBC-2025-XXXXX" onkeydown="if(event.key==='Enter')scanMember()"></div>
+          <div class="form-group">
+            <label>Member Code</label>
+            <input type="text" id="scanCode" placeholder="MBC-2025-XXXXX" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')scanMember()">
+          </div>
           <button class="btn btn-primary" onclick="scanMember()" style="justify-content:center;width:100%;">Look Up Member</button>
         </div>
         <div id="scanResult" style="padding:0 2rem 2rem;"></div>
@@ -1018,6 +1060,8 @@ function adminTab(tab){
   if(tab==='pricing')renderPricingAdmin();
   if(tab==='promo')renderPromoAdmin();
   if(tab==='addmember'){renderPackages();document.getElementById('newStart').value=new Date().toISOString().split('T')[0];}
+  if(tab==='scan'){setTimeout(maybeAutoStartScanner,300);}
+  if(tab!=='scan'){stopScanner();}
 }
 function renderAdmin(){
   adminTab('overview');
@@ -1294,7 +1338,113 @@ function sendChat(){
 }
 
 // ============================================================
-// MOBILE NAV
+// CAMERA QR SCANNER
+// ============================================================
+let scanStream = null;
+let scanAnimFrame = null;
+let useFrontCam = false;
+let lastScanned = '';
+let lastScannedTime = 0;
+
+async function startScanner() {
+  const wrap = document.getElementById('scannerWrap');
+  const video = document.getElementById('scanVideo');
+  const startBtn = document.getElementById('startScanBtn');
+  const stopBtn = document.getElementById('stopScanBtn');
+  const flipBtn = document.getElementById('flipCamBtn');
+  const notice = document.getElementById('noCameraNotice');
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    notice.style.display = 'block';
+    return;
+  }
+  try {
+    if (scanStream) stopScanner();
+    const constraints = {
+      video: {
+        facingMode: useFrontCam ? 'user' : { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      }
+    };
+    scanStream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = scanStream;
+    await video.play();
+    wrap.style.display = 'block';
+    notice.style.display = 'none';
+    startBtn.style.display = 'none';
+    stopBtn.style.display = 'inline-flex';
+    flipBtn.style.display = 'inline-flex';
+    tickScanner();
+  } catch (e) {
+    notice.style.display = 'block';
+    console.warn('Camera error:', e);
+  }
+}
+
+function stopScanner() {
+  if (scanStream) {
+    scanStream.getTracks().forEach(t => t.stop());
+    scanStream = null;
+  }
+  if (scanAnimFrame) { cancelAnimationFrame(scanAnimFrame); scanAnimFrame = null; }
+  document.getElementById('scannerWrap').style.display = 'none';
+  document.getElementById('startScanBtn').style.display = 'inline-flex';
+  document.getElementById('stopScanBtn').style.display = 'none';
+  document.getElementById('flipCamBtn').style.display = 'none';
+}
+
+function flipCamera() {
+  useFrontCam = !useFrontCam;
+  startScanner();
+}
+
+function tickScanner() {
+  const video = document.getElementById('scanVideo');
+  const canvas = document.getElementById('scanCanvas');
+  if (!scanStream || video.readyState !== video.HAVE_ENOUGH_DATA) {
+    scanAnimFrame = requestAnimationFrame(tickScanner);
+    return;
+  }
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+  if (code && code.data) {
+    const now = Date.now();
+    // debounce: same code not re-processed within 3s
+    if (code.data !== lastScanned || now - lastScannedTime > 3000) {
+      lastScanned = code.data;
+      lastScannedTime = now;
+      onCodeScanned(code.data);
+    }
+  }
+  scanAnimFrame = requestAnimationFrame(tickScanner);
+}
+
+function onCodeScanned(raw) {
+  const code = raw.trim().toUpperCase();
+  document.getElementById('scanStatus').textContent = '✓ Code detected: ' + code;
+  document.getElementById('scanStatus').style.color = '#22c55e';
+  setTimeout(() => {
+    document.getElementById('scanStatus').textContent = 'Scanning… point camera at QR code';
+    document.getElementById('scanStatus').style.color = 'var(--blue)';
+  }, 2500);
+  // Fill manual input and trigger lookup
+  document.getElementById('scanCode').value = code;
+  scanMember();
+  // Vibrate on mobile
+  if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+}
+
+// Auto-start scanner when tab is opened on mobile
+function maybeAutoStartScanner() {
+  const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+  if (isMobile) startScanner();
+}
+
 // ============================================================
 function toggleMobileNav(){
   const nav=document.getElementById('navLinks');
