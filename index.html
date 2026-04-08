@@ -6,6 +6,7 @@
 <title>Muscle Beach Club – Uluwatu, Bali</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <style>
 @keyframes scanAnim{0%{top:4px;}50%{top:calc(100% - 6px);}100%{top:4px;}}
@@ -670,6 +671,7 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:3rem 0 
       <li><button onclick="adminTab('addmember')" id="tab-addmember"><span>➕</span><span> Add Member</span></button></li>
       <li><button onclick="adminTab('pricing')" id="tab-pricing"><span>💰</span><span> Pricing</span></button></li>
       <li><button onclick="adminTab('promo')" id="tab-promo"><span>🎉</span><span> Promo</span></button></li>
+      <li><button onclick="adminTab('checkin')" id="tab-checkin"><span>✅</span><span> Check-in</span></button></li>
       <li><button onclick="adminTab('scan')" id="tab-scan"><span>📷</span><span> Scan QR</span></button></li>
       <li style="margin-top:auto;"><button onclick="doLogout()"><span>🚪</span><span> Logout</span></button></li>
     </ul>
@@ -679,7 +681,11 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:3rem 0 
     <div id="admin-overview">
       <div class="admin-top">
         <h2 class="admin-page-title">Dashboard</h2>
-        <button class="btn btn-primary btn-sm" onclick="exportMembers()">Download CSV</button>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+          <select id="csvMonth" style="background:var(--dark2);border:1px solid var(--border);color:var(--white);padding:.4rem .7rem;font-size:12px;font-family:var(--font-cond);outline:none;"><option value="">All Months</option><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select>
+          <select id="csvYear" style="background:var(--dark2);border:1px solid var(--border);color:var(--white);padding:.4rem .7rem;font-size:12px;font-family:var(--font-cond);outline:none;"><option value="">All Years</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select>
+          <button class="btn btn-primary btn-sm" onclick="exportMembers()">Download CSV</button>
+        </div>
       </div>
       <div id="expiredNotif" class="notification-bar" style="display:none;">
         <span class="notif-icon">⚠</span>
@@ -707,13 +713,13 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:3rem 0 
         <h2 class="admin-page-title">Members</h2>
         <div style="display:flex;gap:.75rem;">
           <input type="text" id="searchMember" placeholder="Search..." style="background:var(--dark2);border:1px solid var(--border);color:var(--white);padding:.5rem 1rem;font-size:13px;outline:none;" oninput="renderMembersTable()">
-          <button class="btn btn-primary btn-sm" onclick="exportMembers()">Export CSV</button>
+          <select id="csvMonth2" style="background:var(--dark2);border:1px solid var(--border);color:var(--white);padding:.4rem .7rem;font-size:12px;font-family:var(--font-cond);outline:none;"><option value="">All Months</option><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option></select><select id="csvYear2" style="background:var(--dark2);border:1px solid var(--border);color:var(--white);padding:.4rem .7rem;font-size:12px;font-family:var(--font-cond);outline:none;"><option value="">All Years</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select><button class="btn btn-primary btn-sm" onclick="exportMembers(2)">Export CSV</button>
         </div>
       </div>
       <div class="admin-section">
         <div style="overflow-x:auto;">
           <table class="admin-table">
-            <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Package</th><th>Start</th><th>Expiry</th><th>Status</th><th>Discount</th><th>Actions</th></tr></thead>
+            <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Package</th><th>Start</th><th>Expiry</th><th>Status</th><th>Discount</th><th>Check-ins</th><th>Actions</th></tr></thead>
             <tbody id="membersTbody"></tbody>
           </table>
         </div>
@@ -785,6 +791,69 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:3rem 0 
         <div id="adminPromoList" style="padding:1rem;"></div>
       </div>
     </div>
+    <!-- CHECK-IN -->
+    <div id="admin-checkin" style="display:none;">
+      <div class="admin-top"><h2 class="admin-page-title">Check-in</h2></div>
+
+      <!-- CAMERA + MANUAL INPUT -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+        <div class="admin-section">
+          <div class="admin-section-head">
+            <span class="admin-section-title">📷 Scan QR</span>
+            <div style="display:flex;gap:.5rem;">
+              <button class="btn btn-primary btn-sm" id="ciStartBtn" onclick="ciStartScanner()">Start Camera</button>
+              <button class="btn btn-outline btn-sm" id="ciStopBtn" onclick="ciStopScanner()" style="display:none;">Stop</button>
+              <button class="btn btn-outline btn-sm" id="ciFlipBtn" onclick="ciFlipCamera()" style="display:none;">Flip</button>
+            </div>
+          </div>
+          <div style="padding:1.5rem;">
+            <div id="ciScannerWrap" style="display:none;position:relative;max-width:360px;margin:0 auto 1rem;">
+              <video id="ciVideo" autoplay playsinline muted style="width:100%;border:2px solid var(--blue3);display:block;background:#000;"></video>
+              <canvas id="ciCanvas" style="display:none;"></canvas>
+              <div style="position:absolute;inset:0;pointer-events:none;">
+                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:180px;height:180px;">
+                  <div style="position:absolute;top:0;left:0;width:28px;height:28px;border-top:3px solid var(--blue);border-left:3px solid var(--blue);"></div>
+                  <div style="position:absolute;top:0;right:0;width:28px;height:28px;border-top:3px solid var(--blue);border-right:3px solid var(--blue);"></div>
+                  <div style="position:absolute;bottom:0;left:0;width:28px;height:28px;border-bottom:3px solid var(--blue);border-left:3px solid var(--blue);"></div>
+                  <div style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-bottom:3px solid var(--blue);border-right:3px solid var(--blue);"></div>
+                  <div style="position:absolute;top:0;left:4px;right:4px;height:2px;background:var(--blue);opacity:.8;animation:scanAnim 2s linear infinite;"></div>
+                </div>
+              </div>
+              <div id="ciScanStatus" style="text-align:center;padding:.5rem;font-family:var(--font-cond);font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);background:rgba(0,0,0,.6);">Scanning…</div>
+            </div>
+            <div id="ciNoCam" style="display:none;background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.2);padding:1rem;font-size:13px;color:#eab308;">⚠ Camera not available. Use manual input.</div>
+          </div>
+        </div>
+
+        <div class="admin-section">
+          <div class="admin-section-head"><span class="admin-section-title">⌨ Manual Input</span></div>
+          <div style="padding:2rem;">
+            <div class="form-group">
+              <label>Member Code</label>
+              <input type="text" id="ciCode" placeholder="MBC-2025-XXXXXX" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key===\'Enter\')ciLookup()">
+            </div>
+            <button class="btn btn-primary" onclick="ciLookup()" style="width:100%;justify-content:center;">Look Up Member</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHECK-IN RESULT CARD -->
+      <div id="ciResultWrap" style="display:none;" class="admin-section">
+        <div style="padding:2rem;" id="ciResultInner"></div>
+      </div>
+
+      <!-- TODAY LOG -->
+      <div class="admin-section">
+        <div class="admin-section-head"><span class="admin-section-title">📋 Today's Check-in Log</span><button class="btn btn-outline btn-sm" onclick="renderTodayLog()">Refresh</button></div>
+        <div style="overflow-x:auto;">
+          <table class="admin-table">
+            <thead><tr><th>Time</th><th>Code</th><th>Name</th><th>Package</th><th>Status</th></tr></thead>
+            <tbody id="ciTodayLog"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- SCAN -->
     <div id="admin-scan" style="display:none;">
       <div class="admin-top"><h2 class="admin-page-title">Scan QR / Barcode</h2></div>
@@ -856,6 +925,89 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:3rem 0 
   </div>
 </div>
 
+
+<!-- ==================== DIGITAL MEMBER CARD MODAL ==================== -->
+<div id="memberCardModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:2000;align-items:center;justify-content:center;padding:1rem;overflow-y:auto;">
+  <div style="background:var(--dark2);border:1px solid var(--border);width:100%;max-width:520px;position:relative;">
+    <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-family:var(--font-cond);font-size:16px;letter-spacing:1px;text-transform:uppercase;font-weight:600;">Digital Member Card</span>
+      <button onclick="document.getElementById('memberCardModal').style.display='none'" style="background:none;border:none;color:var(--gray);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:1.5rem;text-align:center;">
+      <!-- THE CARD — rendered at 540x675 (half of 1080x1350, ratio 4:5) -->
+      <div id="digitalCard" style="width:400px;height:500px;margin:0 auto;position:relative;background:#f0f4f8;font-family:Arial,sans-serif;overflow:hidden;display:inline-block;">
+        <!-- Blue header bar -->
+        <div style="position:absolute;top:0;left:0;right:0;height:140px;background:#1a5fb4;"></div>
+        <!-- White bottom area -->
+        <div style="position:absolute;top:100px;left:0;right:0;bottom:0;background:#f0f4f8;border-radius:0;"></div>
+        <!-- Logo circle -->
+        <div style="position:absolute;top:70px;left:50%;transform:translateX(-50%);width:110px;height:110px;background:#fff;border-radius:50%;border:4px solid #fff;box-shadow:0 4px 20px rgba(0,0,0,.15);overflow:hidden;display:flex;align-items:center;justify-content:center;z-index:2;">
+          <img id="dcLogo" src="https://pasteboard.co/5mVvVH7uWpEl.png" style="width:90px;height:90px;object-fit:contain;" onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 80 80\'><rect width=\'80\' height=\'80\' fill=\'%231a5fb4\'/><text x=\'40\' y=\'55\' text-anchor=\'middle\' font-size=\'32\' fill=\'white\'>MBC</text></svg>'">
+        </div>
+        <!-- QR Code -->
+        <div style="position:absolute;top:200px;left:50%;transform:translateX(-50%);z-index:2;">
+          <div id="dcQR" style="background:#fff;padding:10px;border:3px solid #1a1a1a;display:inline-block;"></div>
+        </div>
+        <!-- Member ID label -->
+        <div id="dcIdLabel" style="position:absolute;top:370px;left:0;right:0;text-align:center;font-family:Arial,sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#444;z-index:2;"></div>
+        <!-- Member Name -->
+        <div id="dcName" style="position:absolute;top:390px;left:20px;right:20px;text-align:center;font-family:Arial,sans-serif;font-size:26px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#111;z-index:2;line-height:1.1;"></div>
+        <!-- Expiry Date -->
+        <div id="dcExpiry" style="position:absolute;top:450px;left:0;right:0;text-align:center;font-family:Arial,sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#444;z-index:2;"></div>
+        <!-- Package -->
+        <div id="dcPkg" style="position:absolute;top:470px;left:0;right:0;text-align:center;font-family:Arial,sans-serif;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#888;z-index:2;"></div>
+      </div>
+      <div style="margin-top:1.5rem;display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="downloadMemberCard()">⬇ Download PNG</button>
+        <button class="btn btn-outline" onclick="sendCardViaWA()" id="dcWABtn">📱 Send via WhatsApp</button>
+      </div>
+      <p style="font-size:11px;color:var(--gray);margin-top:.75rem;line-height:1.6;">Card dimensions: 1080×1350px (4:5) when downloaded</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MEMBER DETAILS MODAL ==================== -->
+<div id="memberDetailsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:2000;align-items:center;justify-content:center;padding:1rem;overflow-y:auto;">
+  <div style="background:var(--dark2);border:1px solid var(--border);width:100%;max-width:680px;position:relative;">
+    <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-family:var(--font-cond);font-size:16px;letter-spacing:1px;text-transform:uppercase;font-weight:600;" id="detailsModalTitle">Member Details</span>
+      <button onclick="document.getElementById('memberDetailsModal').style.display='none'" style="background:none;border:none;color:var(--gray);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:1.5rem;" id="memberDetailsBody">
+      <!-- filled by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CHECK-IN POPUP (after scan) ==================== -->
+<div id="ciPopupModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:2500;align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:#f0f4f8;width:100%;max-width:380px;position:relative;overflow:hidden;border-radius:4px;">
+    <!-- Blue top bar -->
+    <div style="height:100px;background:#1a5fb4;position:relative;"></div>
+    <!-- Logo -->
+    <div style="position:absolute;top:40px;left:50%;transform:translateX(-50%);width:90px;height:90px;background:#fff;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 12px rgba(0,0,0,.15);overflow:hidden;display:flex;align-items:center;justify-content:center;">
+      <img src="https://pasteboard.co/5mVvVH7uWpEl.png" style="width:72px;height:72px;object-fit:contain;" onerror="this.src=''">
+    </div>
+    <div style="padding:3.5rem 2rem 2rem;text-align:center;background:#f0f4f8;">
+      <!-- Status badge -->
+      <div id="ciPopupStatus" style="display:inline-block;padding:.5rem 2rem;border-radius:50px;font-family:Arial,sans-serif;font-size:18px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:1.5rem;"></div>
+      <!-- ID -->
+      <div id="ciPopupId" style="font-family:Arial,sans-serif;font-size:22px;font-weight:700;color:#111;margin-bottom:.3rem;"></div>
+      <!-- Name -->
+      <div id="ciPopupName" style="font-family:Arial,sans-serif;font-size:26px;font-weight:900;color:#111;margin-bottom:.5rem;"></div>
+      <!-- Phone -->
+      <div id="ciPopupPhone" style="font-family:Arial,sans-serif;font-size:15px;color:#555;margin-bottom:.3rem;"></div>
+      <!-- Expiry -->
+      <div id="ciPopupExpiry" style="font-family:Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;color:#e53e3e;margin-bottom:2rem;"></div>
+      <!-- Check-in button -->
+      <button id="ciPopupBtn" onclick="confirmCheckIn()" style="background:#1a5fb4;color:#fff;border:none;padding:.9rem 3rem;border-radius:50px;font-family:Arial,sans-serif;font-size:18px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;width:100%;max-width:280px;">CHECK IN</button>
+      <div style="margin-top:1rem;">
+        <button onclick="document.getElementById('ciPopupModal').style.display='none'" style="background:none;border:none;color:#888;font-size:13px;cursor:pointer;letter-spacing:1px;">CANCEL</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- AI CHATBOX -->
 <button class="chatbox-toggle" onclick="toggleChat()">
   <svg viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 1.82.487 3.53 1.338 5L2 22l5.162-1.312A9.956 9.956 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a7.956 7.956 0 01-4.035-1.093L5 20l1.106-2.894A8 8 0 1112 20z"/></svg>
@@ -877,14 +1029,13 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:3rem 0 
 
 <script type="module">
 // ============================================================
-// FIREBASE FIRESTORE — DATABASE TERPUSAT
-// Config sudah diisi, jangan diubah kecuali ganti project.
+// FIREBASE FIRESTORE — MBC DATABASE
 // ============================================================
 import { initializeApp }    from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import {
   getFirestore, collection, doc,
   getDocs, setDoc, addDoc, updateDoc, deleteDoc,
-  serverTimestamp
+  serverTimestamp, query, orderBy, where
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -900,8 +1051,7 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 
 // ============================================================
-// BUG FIX #1: DEFAULT_PACKAGES harus dideklarasi PERTAMA
-// sebelum fungsi apapun yang memakainya.
+// DEFAULT DATA
 // ============================================================
 const DEFAULT_PACKAGES = [
   {id:'daily',   name:'Daily',    nameId:'Harian',   price:220000,  days:1,   promo:'',                              featured:false},
@@ -919,24 +1069,31 @@ const DEFAULT_PACKAGES = [
 let currentLang = 'en';
 let currentUser = null;
 let heroIndex   = 0;
+let ciStream    = null;
+let ciAnimFrame = null;
+let ciUseFront  = false;
+let ciLastScan  = '';
+let ciLastTime  = 0;
+let ciCurrentMember = null; // member loaded in check-in popup
 
 // ============================================================
 // UTILS
 // ============================================================
 function normCode(c){ return (c||'').trim().toUpperCase().replace(/\s+/g,''); }
 function formatPrice(n){ return Number(n).toLocaleString('id-ID'); }
+function todayStr(){ return new Date().toISOString().split('T')[0]; }
+function nowTs(){ return new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}); }
 
 // ============================================================
-// LOADING SPINNER
+// LOADING OVERLAY
 // ============================================================
 function showLoading(msg='Loading…'){
   let ov = document.getElementById('dbLoadingOverlay');
   if(!ov){
     ov = document.createElement('div');
     ov.id = 'dbLoadingOverlay';
-    ov.style.cssText = 'position:fixed;inset:0;background:rgba(10,10,10,.88);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;';
-    ov.innerHTML = `
-      <div style="width:40px;height:40px;border:3px solid rgba(74,179,232,.25);border-top-color:#4ab3e8;border-radius:50%;animation:_spin .7s linear infinite;"></div>
+    ov.style.cssText='position:fixed;inset:0;background:rgba(10,10,10,.88);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;';
+    ov.innerHTML=`<div style="width:40px;height:40px;border:3px solid rgba(74,179,232,.25);border-top-color:#4ab3e8;border-radius:50%;animation:_spin .7s linear infinite;"></div>
       <div id="dbLoadingMsg" style="font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#4ab3e8;"></div>
       <style>@keyframes _spin{to{transform:rotate(360deg)}}</style>`;
     document.body.appendChild(ov);
@@ -953,41 +1110,29 @@ function hideLoading(){
 // FIRESTORE — MEMBERS
 // ============================================================
 async function dbGetMembers(){
-  try {
+  try{
     const snap = await getDocs(collection(db,'members'));
-    return snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-  } catch(e){
-    console.error('Firestore getMembers error:', e);
-    showToast('⚠ DB read error: ' + e.code);
-    return [];
-  }
+    return snap.docs.map(d=>({_id:d.id,...d.data()}));
+  }catch(e){ console.error(e); showToast('⚠ DB error: '+e.code); return []; }
 }
-
 async function dbGetMemberByCode(code){
-  try {
-    const norm  = normCode(code);
-    const snap  = await getDocs(collection(db,'members'));
-    const found = snap.docs.find(d => normCode(d.data().code||'') === norm);
-    return found ? { _id: found.id, ...found.data() } : null;
-  } catch(e){
-    console.error('Firestore getMemberByCode error:', e);
-    return null;
-  }
+  try{
+    const norm = normCode(code);
+    const snap = await getDocs(collection(db,'members'));
+    const found = snap.docs.find(d=>normCode(d.data().code||'')===norm);
+    return found ? {_id:found.id,...found.data()} : null;
+  }catch(e){ return null; }
 }
-
 async function dbSaveMember(member){
-  // Document ID = sanitised code for direct lookup
   const docId = member.code.replace(/[^a-zA-Z0-9\-]/g,'_');
-  await setDoc(doc(db,'members',docId), { ...member, updatedAt: serverTimestamp() });
+  await setDoc(doc(db,'members',docId),{...member, updatedAt:serverTimestamp()});
   return docId;
 }
-
 async function dbUpdateMember(code, data){
   const m = await dbGetMemberByCode(code);
   if(!m) return;
-  await updateDoc(doc(db,'members',m._id), { ...data, updatedAt: serverTimestamp() });
+  await updateDoc(doc(db,'members',m._id),{...data, updatedAt:serverTimestamp()});
 }
-
 async function dbDeleteMember(code){
   const m = await dbGetMemberByCode(code);
   if(!m) return;
@@ -995,38 +1140,61 @@ async function dbDeleteMember(code){
 }
 
 // ============================================================
+// FIRESTORE — CHECK-IN LOGS
+// ============================================================
+async function dbAddCheckIn(memberCode, memberName, pkgName, status){
+  const now = new Date();
+  await addDoc(collection(db,'checkins'),{
+    memberCode, memberName, pkgName, status,
+    date: now.toISOString().split('T')[0],
+    time: now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),
+    timestamp: serverTimestamp()
+  });
+}
+async function dbGetCheckInsByCode(code){
+  try{
+    const snap = await getDocs(collection(db,'checkins'));
+    return snap.docs
+      .map(d=>({_id:d.id,...d.data()}))
+      .filter(d=>normCode(d.memberCode)===normCode(code))
+      .sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
+  }catch(e){ return []; }
+}
+async function dbGetTodayCheckIns(){
+  try{
+    const today = todayStr();
+    const snap = await getDocs(collection(db,'checkins'));
+    return snap.docs
+      .map(d=>({_id:d.id,...d.data()}))
+      .filter(d=>d.date===today)
+      .sort((a,b)=>b.time.localeCompare(a.time));
+  }catch(e){ return []; }
+}
+async function dbGetCheckInCount(code){
+  const list = await dbGetCheckInsByCode(code);
+  return list.length;
+}
+
+// ============================================================
 // FIRESTORE — PACKAGES
 // ============================================================
 async function dbGetPackages(){
-  try {
+  try{
     const snap = await getDocs(collection(db,'packages'));
-    if(snap.empty){
-      await dbSeedPackages();
-      return DEFAULT_PACKAGES;
-    }
-    const pkgs = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-    pkgs.sort((a,b) => a.price - b.price);
+    if(snap.empty){ await dbSeedPackages(); return DEFAULT_PACKAGES; }
+    const pkgs = snap.docs.map(d=>({_id:d.id,...d.data()}));
+    pkgs.sort((a,b)=>a.price-b.price);
     return pkgs;
-  } catch(e){
-    console.error('Firestore getPackages error:', e);
-    showToast('⚠ Packages DB error – using defaults');
-    return DEFAULT_PACKAGES;
-  }
+  }catch(e){ return DEFAULT_PACKAGES; }
 }
-
 async function dbSeedPackages(){
-  for(const p of DEFAULT_PACKAGES){
-    await setDoc(doc(db,'packages',p.id), p);
-  }
-  console.log('Packages seeded to Firestore');
+  for(const p of DEFAULT_PACKAGES) await setDoc(doc(db,'packages',p.id),p);
 }
-
 async function dbSavePackages(pkgs){
   for(const p of pkgs){
-    const id = p.id || p._id;
-    if(!id) continue;
-    const { _id, ...data } = p;  // strip _id before saving
-    await setDoc(doc(db,'packages',id), data);
+    const id=p.id||p._id; if(!id) continue;
+    const {_id,...data}=p;
+    await setDoc(doc(db,'packages',id),data);
   }
 }
 
@@ -1034,568 +1202,628 @@ async function dbSavePackages(pkgs){
 // FIRESTORE — PROMOS
 // ============================================================
 async function dbGetPromos(){
-  try {
-    const snap = await getDocs(collection(db,'promos'));
-    return snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-  } catch(e){ console.error('Firestore getPromos error:', e); return []; }
+  try{
+    const snap=await getDocs(collection(db,'promos'));
+    return snap.docs.map(d=>({_id:d.id,...d.data()}));
+  }catch(e){ return []; }
 }
-
 async function dbAddPromo(promo){
-  const ref = await addDoc(collection(db,'promos'), { ...promo, createdAt: serverTimestamp() });
+  const ref=await addDoc(collection(db,'promos'),{...promo,createdAt:serverTimestamp()});
   return ref.id;
 }
-
-async function dbDeletePromo(id){
-  await deleteDoc(doc(db,'promos',id));
-}
+async function dbDeletePromo(id){ await deleteDoc(doc(db,'promos',id)); }
 
 // ============================================================
 // TOAST
 // ============================================================
-function showToast(msg, duration=3500){
-  const t = document.getElementById('toast');
+function showToast(msg, dur=3500){
+  const t=document.getElementById('toast');
   if(!t) return;
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), duration);
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
 }
-// BUG FIX #3: expose to window so inline onclick= can call it
 window.showToast = showToast;
 
 // ============================================================
 // LANGUAGE
 // ============================================================
 function setLang(lang){
-  currentLang = lang;
-  document.querySelectorAll('.lang-btn').forEach(b =>
-    b.classList.toggle('active', b.textContent === lang.toUpperCase()));
-  document.querySelectorAll('[data-en]').forEach(el => {
-    const t = el.getAttribute('data-'+lang);
-    if(t) el.textContent = t;
-  });
+  currentLang=lang;
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('active',b.textContent===lang.toUpperCase()));
+  document.querySelectorAll('[data-en]').forEach(el=>{const t=el.getAttribute('data-'+lang);if(t)el.textContent=t;});
 }
-window.setLang = setLang;
+window.setLang=setLang;
 
 // ============================================================
 // HERO SLIDER
 // ============================================================
 function initHero(){
-  const slides = document.querySelectorAll('.hero-slide');
-  const ind    = document.getElementById('heroIndicators');
+  const slides=document.querySelectorAll('.hero-slide');
+  const ind=document.getElementById('heroIndicators');
   if(!ind) return;
-  slides.forEach((_,i) => {
-    const d = document.createElement('div');
-    d.className = 'hero-dot' + (i===0?' active':'');
-    d.onclick = () => goHero(i);
+  slides.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='hero-dot'+(i===0?' active':'');
+    d.onclick=()=>goHero(i);
     ind.appendChild(d);
   });
-  setInterval(() => goHero((heroIndex+1) % slides.length), 5000);
+  setInterval(()=>goHero((heroIndex+1)%slides.length),5000);
 }
 function goHero(i){
-  const slides = document.querySelectorAll('.hero-slide');
-  const dots   = document.querySelectorAll('.hero-dot');
-  slides[heroIndex].classList.remove('active');
-  dots[heroIndex].classList.remove('active');
-  heroIndex = i;
-  slides[i].classList.add('active');
-  dots[i].classList.add('active');
+  const sl=document.querySelectorAll('.hero-slide'),dt=document.querySelectorAll('.hero-dot');
+  sl[heroIndex].classList.remove('active'); dt[heroIndex].classList.remove('active');
+  heroIndex=i; sl[i].classList.add('active'); dt[i].classList.add('active');
 }
-window.initHero = initHero;
-window.goHero   = goHero;
+window.initHero=initHero; window.goHero=goHero;
 
 // ============================================================
 // MODAL
 // ============================================================
-function openModal(id) { document.getElementById(id).classList.add('open'); }
+function openModal(id){ document.getElementById(id).classList.add('open'); }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
-window.openModal  = openModal;
-window.closeModal = closeModal;
+window.openModal=openModal; window.closeModal=closeModal;
 
 // ============================================================
 // PACKAGES RENDER
 // ============================================================
 async function renderPackages(){
-  const pkgs = await dbGetPackages();
-  window._pkgCache = pkgs;
-
-  const grid = document.getElementById('pkgGrid');
-  if(grid){
-    grid.innerHTML = pkgs.map(p => `
-      <div class="pkg-card${p.featured?' featured':''}">
-        ${p.featured ? '<div class="pkg-badge">Most Popular</div>' : ''}
-        <div class="pkg-name">${currentLang==='id' ? (p.nameId||p.name) : p.name}</div>
-        <div class="pkg-price">${formatPrice(p.price)}</div>
-        <div class="pkg-unit">IDR</div>
-        ${p.promo ? `<div class="pkg-promo">✨ ${p.promo}</div>` : ''}
-        <button class="btn btn-${p.featured?'primary':'outline'} pkg-btn" onclick="openJoin('${p.id}')">
-          ${currentLang==='id' ? 'Daftar' : 'Join Now'}
-        </button>
-      </div>`).join('');
-  }
-
-  // Update admin package select
-  const sel = document.getElementById('newPkg');
-  if(sel){
-    sel.innerHTML = '<option value="">-- Select Package --</option>' +
-      pkgs.map(p => `<option value="${p.id}" data-days="${p.days}" data-price="${p.price}">
-        ${p.name} – IDR ${formatPrice(p.price)}</option>`).join('');
-  }
+  const pkgs=await dbGetPackages();
+  window._pkgCache=pkgs;
+  const grid=document.getElementById('pkgGrid');
+  if(grid) grid.innerHTML=pkgs.map(p=>`
+    <div class="pkg-card${p.featured?' featured':''}">
+      ${p.featured?'<div class="pkg-badge">Most Popular</div>':''}
+      <div class="pkg-name">${currentLang==='id'?(p.nameId||p.name):p.name}</div>
+      <div class="pkg-price">${formatPrice(p.price)}</div>
+      <div class="pkg-unit">IDR</div>
+      ${p.promo?`<div class="pkg-promo">✨ ${p.promo}</div>`:''}
+      <button class="btn btn-${p.featured?'primary':'outline'} pkg-btn" onclick="openJoin('${p.id}')">
+        ${currentLang==='id'?'Daftar':'Join Now'}
+      </button>
+    </div>`).join('');
+  const sel=document.getElementById('newPkg');
+  if(sel) sel.innerHTML='<option value="">-- Select Package --</option>'+
+    pkgs.map(p=>`<option value="${p.id}" data-days="${p.days}" data-price="${p.price}">${p.name} – IDR ${formatPrice(p.price)}</option>`).join('');
 }
-window.renderPackages = renderPackages;
+window.renderPackages=renderPackages;
 
 // ============================================================
 // PROMO RENDER
 // ============================================================
 async function renderPromos(){
-  const promos = await dbGetPromos();
-  const grid   = document.getElementById('promoGrid');
+  const promos=await dbGetPromos();
+  const grid=document.getElementById('promoGrid');
   if(!grid) return;
-  if(!promos.length){
-    grid.innerHTML = `<div class="promo-empty"><p>No active promotions at the moment. Check back soon!</p></div>`;
-    return;
-  }
-  grid.innerHTML = promos.map(pr => `
+  if(!promos.length){ grid.innerHTML='<div class="promo-empty"><p>No active promotions at the moment. Check back soon!</p></div>'; return; }
+  grid.innerHTML=promos.map(pr=>`
     <div class="promo-card">
-      ${pr.img ? `<img class="promo-img" src="${pr.img}" alt="${pr.title}" onerror="this.style.display='none'">` : ''}
+      ${pr.img?`<img class="promo-img" src="${pr.img}" alt="${pr.title}" onerror="this.style.display='none'">`:''}
       <div class="promo-body">
-        ${pr.tag ? `<div class="promo-tag">${pr.tag}</div>` : ''}
+        ${pr.tag?`<div class="promo-tag">${pr.tag}</div>`:''}
         <div class="promo-title">${pr.title}</div>
         <div class="promo-desc">${pr.desc||''}</div>
       </div>
     </div>`).join('');
 }
-window.renderPromos = renderPromos;
+window.renderPromos=renderPromos;
 
 // ============================================================
 // JOIN MODAL
 // ============================================================
-let selectedPkgId = '';
+let selectedPkgId='';
 function openJoin(pkgId){
-  const pkgs = window._pkgCache || DEFAULT_PACKAGES;
-  const p    = pkgs.find(x => x.id === pkgId);
-  if(!p) return;
-  selectedPkgId = pkgId;
-  document.getElementById('selectedPkgInfo').innerHTML =
-    `<div class="sp-name">${p.name}</div><div class="sp-price">IDR ${formatPrice(p.price)}</div>`;
+  const pkgs=window._pkgCache||DEFAULT_PACKAGES;
+  const p=pkgs.find(x=>x.id===pkgId); if(!p) return;
+  selectedPkgId=pkgId;
+  document.getElementById('selectedPkgInfo').innerHTML=`<div class="sp-name">${p.name}</div><div class="sp-price">IDR ${formatPrice(p.price)}</div>`;
   openModal('joinModal');
 }
 function submitJoin(){
-  const name  = document.getElementById('joinName').value.trim();
-  const phone = document.getElementById('joinPhone').value.trim();
+  const name=document.getElementById('joinName').value.trim();
+  const phone=document.getElementById('joinPhone').value.trim();
   if(!name||!phone){ showToast('Please fill in all fields'); return; }
-  const pkgs = window._pkgCache || DEFAULT_PACKAGES;
-  const p    = pkgs.find(x => x.id === selectedPkgId);
-  const msg  = `Hello Muscle Beach Club! 👋\n\nI'd like to register for the *${p?p.name:''}* membership.\n\nName: ${name}\nPhone: ${phone}\n\nPlease assist me with the registration.`;
-  window.open(`https://wa.me/6281339156003?text=${encodeURIComponent(msg)}`, '_blank');
-  closeModal('joinModal');
-  showToast('Redirecting to WhatsApp…');
+  const pkgs=window._pkgCache||DEFAULT_PACKAGES;
+  const p=pkgs.find(x=>x.id===selectedPkgId);
+  const msg=`Hello Muscle Beach Club! 👋\n\nI'd like to register for the *${p?p.name:''}* membership.\n\nName: ${name}\nPhone: ${phone}\n\nPlease assist me with the registration.`;
+  window.open(`https://wa.me/6281339156003?text=${encodeURIComponent(msg)}`,'_blank');
+  closeModal('joinModal'); showToast('Redirecting to WhatsApp…');
 }
-window.openJoin   = openJoin;
-window.submitJoin = submitJoin;
+window.openJoin=openJoin; window.submitJoin=submitJoin;
 
 // ============================================================
 // LOGIN / LOGOUT
 // ============================================================
 function showLogin(){
-  document.getElementById('main-site').style.display = 'none';
+  document.getElementById('main-site').style.display='none';
   document.getElementById('login-page').classList.add('active');
-  document.getElementById('member-page').classList.remove('active');
-  document.getElementById('admin-page').classList.remove('active');
+  ['member-page','admin-page'].forEach(id=>document.getElementById(id).classList.remove('active'));
 }
 function backToSite(){
-  document.getElementById('main-site').style.display = 'block';
-  ['login-page','member-page','admin-page'].forEach(id =>
-    document.getElementById(id).classList.remove('active'));
+  document.getElementById('main-site').style.display='block';
+  ['login-page','member-page','admin-page'].forEach(id=>document.getElementById(id).classList.remove('active'));
 }
 async function doLogin(){
-  const code = (document.getElementById('loginCode').value||'').trim();
+  const code=(document.getElementById('loginCode').value||'').trim();
   if(!code){ showToast('Enter your member code'); return; }
-
-  // Admin login
-  if(code === '#admin0#'){
+  if(code==='#admin0#'){
     document.getElementById('login-page').classList.remove('active');
     document.getElementById('admin-page').classList.add('active');
-    renderAdmin();
-    return;
+    renderAdmin(); return;
   }
-
-  // Member login
   showLoading('Checking membership…');
-  const m = await dbGetMemberByCode(code);
+  const m=await dbGetMemberByCode(code);
   hideLoading();
   if(!m){ showToast('Invalid code. Please try again.'); return; }
-  currentUser = m;
+  currentUser=m;
   document.getElementById('login-page').classList.remove('active');
   renderMemberDashboard(m);
   document.getElementById('member-page').classList.add('active');
 }
-function doLogout(){
-  currentUser = null;
-  backToSite();
-  document.getElementById('loginCode').value = '';
-}
-window.showLogin  = showLogin;
-window.backToSite = backToSite;
-window.doLogin    = doLogin;
-window.doLogout   = doLogout;
+function doLogout(){ currentUser=null; ciStopScanner(); backToSite(); document.getElementById('loginCode').value=''; }
+window.showLogin=showLogin; window.backToSite=backToSite; window.doLogin=doLogin; window.doLogout=doLogout;
 
 // ============================================================
 // MEMBER DASHBOARD
 // ============================================================
 function renderMemberDashboard(m){
-  document.getElementById('memberNavName').textContent  = m.name;
-  document.getElementById('mName').textContent          = m.name;
-  document.getElementById('mId').textContent            = m.code;
-  document.getElementById('mCodeDisplay').textContent   = m.code;
-  document.getElementById('mPhone').textContent         = m.phone;
-  document.getElementById('mPkg').textContent           = m.pkgName;
-  document.getElementById('mStart').textContent         = m.startDate;
-  document.getElementById('mExpiry').textContent        = m.expiryDate;
-
-  const today  = new Date(); today.setHours(0,0,0,0);
-  const exp    = new Date(m.expiryDate);
-  const diff   = Math.ceil((exp - today) / 86400000);
-  const active = diff >= 0;
-
-  document.getElementById('mStatusDot').className  = 'status-dot ' + (active ? 'status-active' : 'status-expired');
-  document.getElementById('mStatusText').textContent = active ? 'Active' : 'Expired';
-  document.getElementById('mDays').textContent       = active ? diff + ' days' : 'Expired';
-
-  // QR Code
-  const qrDiv = document.getElementById('qr-container');
-  qrDiv.innerHTML = '';
-  new QRCode(qrDiv, { text: m.code, width: 128, height: 128, colorDark:'#000', colorLight:'#fff' });
+  document.getElementById('memberNavName').textContent=m.name;
+  document.getElementById('mName').textContent=m.name;
+  document.getElementById('mId').textContent=m.code;
+  document.getElementById('mCodeDisplay').textContent=m.code;
+  document.getElementById('mPhone').textContent=m.phone;
+  document.getElementById('mPkg').textContent=m.pkgName;
+  document.getElementById('mStart').textContent=m.startDate;
+  document.getElementById('mExpiry').textContent=m.expiryDate;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const exp=new Date(m.expiryDate);
+  const diff=Math.ceil((exp-today)/86400000);
+  const active=diff>=0;
+  document.getElementById('mStatusDot').className='status-dot '+(active?'status-active':'status-expired');
+  document.getElementById('mStatusText').textContent=active?'Active':'Expired';
+  document.getElementById('mDays').textContent=active?diff+' days':'Expired';
+  const qrDiv=document.getElementById('qr-container');
+  qrDiv.innerHTML='';
+  new QRCode(qrDiv,{text:m.code,width:128,height:128,colorDark:'#000',colorLight:'#fff'});
 }
-window.renderMemberDashboard = renderMemberDashboard;
+window.renderMemberDashboard=renderMemberDashboard;
 
 // ============================================================
 // ADMIN — TAB NAVIGATION
-// BUG FIX #3: adminTab calls local functions directly (OK inside module)
-// but must also be on window for inline onclick
 // ============================================================
 function adminTab(tab){
-  ['overview','members','addmember','pricing','promo','scan'].forEach(t => {
-    document.getElementById('admin-'+t).style.display = t===tab ? 'block' : 'none';
-    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+  const tabs=['overview','members','addmember','pricing','promo','checkin','scan'];
+  tabs.forEach(t=>{
+    document.getElementById('admin-'+t).style.display=t===tab?'block':'none';
+    const el=document.getElementById('tab-'+t);
+    if(el) el.classList.toggle('active',t===tab);
   });
   if(tab==='overview')  renderOverview();
   if(tab==='members')   renderMembersTable();
   if(tab==='pricing')   renderPricingAdmin();
   if(tab==='promo')     renderPromoAdmin();
-  if(tab==='addmember'){ renderPackages(); document.getElementById('newStart').value = new Date().toISOString().split('T')[0]; }
-  if(tab==='scan')      setTimeout(maybeAutoStartScanner, 300);
+  if(tab==='addmember'){ renderPackages(); document.getElementById('newStart').value=new Date().toISOString().split('T')[0]; }
+  if(tab==='checkin')   renderTodayLog();
+  if(tab==='scan')      setTimeout(maybeAutoStartScanner,300);
   if(tab!=='scan')      stopScanner();
+  if(tab!=='checkin')   ciStopScanner();
 }
 function renderAdmin(){ adminTab('overview'); }
-window.adminTab    = adminTab;
-window.renderAdmin = renderAdmin;
+window.adminTab=adminTab; window.renderAdmin=renderAdmin;
 
 // ============================================================
 // ADMIN — OVERVIEW
 // ============================================================
 async function renderOverview(){
   showLoading('Loading dashboard…');
-  const members = await dbGetMembers();
+  const members=await dbGetMembers();
   hideLoading();
-
-  const today    = new Date(); today.setHours(0,0,0,0);
-  const todayStr = today.toISOString().split('T')[0];
-  const active   = members.filter(m => new Date(m.expiryDate) >= today);
-  const expired  = members.filter(m => new Date(m.expiryDate) <  today);
-  const todayExp = members.filter(m => m.expiryDate === todayStr);
-
-  document.getElementById('totalMembers').textContent   = members.length;
-  document.getElementById('activeMembers').textContent  = active.length;
-  document.getElementById('expiredMembers').textContent = expired.length;
-  document.getElementById('todayExpired').textContent   = todayExp.length;
-
-  const notif = document.getElementById('expiredNotif');
+  const today=new Date(); today.setHours(0,0,0,0);
+  const todayS=today.toISOString().split('T')[0];
+  const active=members.filter(m=>new Date(m.expiryDate)>=today);
+  const expired=members.filter(m=>new Date(m.expiryDate)<today);
+  const todayExp=members.filter(m=>m.expiryDate===todayS);
+  document.getElementById('totalMembers').textContent=members.length;
+  document.getElementById('activeMembers').textContent=active.length;
+  document.getElementById('expiredMembers').textContent=expired.length;
+  document.getElementById('todayExpired').textContent=todayExp.length;
+  const notif=document.getElementById('expiredNotif');
   if(todayExp.length){
-    notif.style.display = 'flex';
-    document.getElementById('expiredNotifText').textContent =
-      `${todayExp.length} membership(s) expiring today: ${todayExp.map(m=>m.name).join(', ')}`;
-  } else {
-    notif.style.display = 'none';
-  }
-
-  document.getElementById('overviewTbody').innerHTML =
-    members.slice().reverse().slice(0,10).map(m => `
-      <tr>
-        <td>${m.code}</td><td>${m.name}</td><td>${m.phone||''}</td>
-        <td>${m.pkgName}</td><td>${m.expiryDate}</td>
-        <td><span class="badge ${new Date(m.expiryDate)>=today?'badge-active':'badge-expired'}">
-          ${new Date(m.expiryDate)>=today?'Active':'Expired'}</span></td>
-      </tr>`).join('');
+    notif.style.display='flex';
+    document.getElementById('expiredNotifText').textContent=`${todayExp.length} membership(s) expiring today: ${todayExp.map(m=>m.name).join(', ')}`;
+  } else notif.style.display='none';
+  document.getElementById('overviewTbody').innerHTML=members.slice().reverse().slice(0,10).map(m=>`
+    <tr>
+      <td>${m.code}</td><td>${m.name}</td><td>${m.phone||''}</td>
+      <td>${m.pkgName}</td><td>${m.expiryDate}</td>
+      <td><span class="badge ${new Date(m.expiryDate)>=today?'badge-active':'badge-expired'}">${new Date(m.expiryDate)>=today?'Active':'Expired'}</span></td>
+    </tr>`).join('');
 }
-window.renderOverview = renderOverview;
+window.renderOverview=renderOverview;
 
 // ============================================================
-// ADMIN — MEMBERS TABLE
+// ADMIN — MEMBERS TABLE (with check-in count + details link)
 // ============================================================
 async function renderMembersTable(){
   showLoading('Loading members…');
-  const members = await dbGetMembers();
+  const members=await dbGetMembers();
   hideLoading();
-
-  const search  = (document.getElementById('searchMember')||{}).value || '';
-  const today   = new Date(); today.setHours(0,0,0,0);
-  const filtered = members.filter(m =>
-    m.name.toLowerCase().includes(search.toLowerCase()) ||
-    (m.code||'').toUpperCase().includes(search.toUpperCase()) ||
+  const search=(document.getElementById('searchMember')||{}).value||'';
+  const today=new Date(); today.setHours(0,0,0,0);
+  const filtered=members.filter(m=>
+    m.name.toLowerCase().includes(search.toLowerCase())||
+    (m.code||'').toUpperCase().includes(search.toUpperCase())||
     (m.phone||'').includes(search));
-
-  document.getElementById('membersTbody').innerHTML = filtered.map(m => `
+  document.getElementById('membersTbody').innerHTML=filtered.map(m=>`
     <tr>
       <td><small>${m.code}</small></td>
       <td>${m.name}</td><td>${m.phone||''}</td><td>${m.pkgName}</td>
       <td>${m.startDate}</td><td>${m.expiryDate}</td>
-      <td><span class="badge ${new Date(m.expiryDate)>=today?'badge-active':'badge-expired'}">
-        ${new Date(m.expiryDate)>=today?'Active':'Expired'}</span></td>
+      <td><span class="badge ${new Date(m.expiryDate)>=today?'badge-active':'badge-expired'}">${new Date(m.expiryDate)>=today?'Active':'Expired'}</span></td>
       <td>${m.discount||0}%</td>
+      <td><button class="action-btn" onclick="showMemberDetails('${m.code}')">Details</button></td>
       <td>
+        <button class="action-btn" onclick="showDigitalCard('${m.code}')">🪪 Card</button>
         <button class="action-btn" onclick="extendMember('${m.code}')">Extend</button>
         <button class="action-btn" onclick="editDiscount('${m.code}')">Discount</button>
         <button class="action-btn danger" onclick="deleteMember('${m.code}')">Delete</button>
       </td>
     </tr>`).join('');
 }
-window.renderMembersTable = renderMembersTable;
+window.renderMembersTable=renderMembersTable;
+
+// ============================================================
+// ADMIN — MEMBER DETAILS MODAL (with check-in log)
+// ============================================================
+async function showMemberDetails(code){
+  showLoading('Loading details…');
+  const m=await dbGetMemberByCode(code);
+  const logs=await dbGetCheckInsByCode(code);
+  hideLoading();
+  if(!m){ showToast('Member not found'); return; }
+  const today=new Date(); today.setHours(0,0,0,0);
+  const active=new Date(m.expiryDate)>=today;
+  document.getElementById('detailsModalTitle').textContent=`${m.name} — Details`;
+  document.getElementById('memberDetailsBody').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+      <div style="background:var(--dark3);padding:1rem;border:1px solid var(--border);">
+        <div style="font-family:var(--font-cond);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:.25rem;">Member Code</div>
+        <div style="font-size:14px;">${m.code}</div>
+      </div>
+      <div style="background:var(--dark3);padding:1rem;border:1px solid var(--border);">
+        <div style="font-family:var(--font-cond);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:.25rem;">Status</div>
+        <span class="badge ${active?'badge-active':'badge-expired'}">${active?'Active':'Expired'}</span>
+      </div>
+      <div style="background:var(--dark3);padding:1rem;border:1px solid var(--border);">
+        <div style="font-family:var(--font-cond);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:.25rem;">Package</div>
+        <div style="font-size:14px;">${m.pkgName}</div>
+      </div>
+      <div style="background:var(--dark3);padding:1rem;border:1px solid var(--border);">
+        <div style="font-family:var(--font-cond);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:.25rem;">Phone</div>
+        <div style="font-size:14px;">${m.phone||'-'}</div>
+      </div>
+      <div style="background:var(--dark3);padding:1rem;border:1px solid var(--border);">
+        <div style="font-family:var(--font-cond);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:.25rem;">Start Date</div>
+        <div style="font-size:14px;">${m.startDate}</div>
+      </div>
+      <div style="background:var(--dark3);padding:1rem;border:1px solid var(--border);">
+        <div style="font-family:var(--font-cond);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:.25rem;">Expiry Date</div>
+        <div style="font-size:14px;color:${active?'var(--white)':'#ef4444'}">${m.expiryDate}</div>
+      </div>
+    </div>
+    <div style="margin-bottom:1rem;display:flex;gap:.5rem;flex-wrap:wrap;">
+      <button class="btn btn-primary btn-sm" onclick="showDigitalCard('${m.code}');document.getElementById('memberDetailsModal').style.display='none'">🪪 Digital Card</button>
+      <button class="btn btn-outline btn-sm" onclick="extendMember('${m.code}')">Extend</button>
+      <button class="btn btn-outline btn-sm" onclick="editDiscount('${m.code}')">Edit Discount</button>
+    </div>
+    <div style="font-family:var(--font-cond);font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:.75rem;">Check-in History (${logs.length} visits)</div>
+    ${logs.length===0?'<p style="font-size:13px;color:var(--gray);padding:1rem 0;">No check-ins recorded yet.</p>':
+    `<div style="overflow-x:auto;"><table class="admin-table">
+      <thead><tr><th>Date</th><th>Time</th><th>Package</th><th>Status</th></tr></thead>
+      <tbody>${logs.map(l=>`
+        <tr>
+          <td>${l.date}</td><td>${l.time}</td><td>${l.pkgName||'-'}</td>
+          <td><span class="badge ${l.status==='active'?'badge-active':'badge-expired'}">${l.status}</span></td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>`}`;
+  document.getElementById('memberDetailsModal').style.display='flex';
+}
+window.showMemberDetails=showMemberDetails;
+
+// ============================================================
+// DIGITAL MEMBER CARD
+// ============================================================
+let _dcMember = null;
+
+async function showDigitalCard(code){
+  showLoading('Generating card…');
+  const m = await dbGetMemberByCode(code);
+  hideLoading();
+  if(!m){ showToast('Member not found'); return; }
+  _dcMember = m;
+
+  // Fill card fields
+  document.getElementById('dcIdLabel').textContent = m.code;
+  document.getElementById('dcName').textContent    = m.name.toUpperCase();
+  document.getElementById('dcExpiry').textContent  = 'VALID UNTIL  ' + m.expiryDate;
+  document.getElementById('dcPkg').textContent     = m.pkgName.toUpperCase();
+  document.getElementById('dcWABtn').textContent   = '📱 Send via WhatsApp';
+
+  // Generate QR inside card
+  const qrEl = document.getElementById('dcQR');
+  qrEl.innerHTML = '';
+  new QRCode(qrEl, {text: m.code, width:130, height:130, colorDark:'#000', colorLight:'#fff'});
+
+  document.getElementById('memberCardModal').style.display = 'flex';
+}
+window.showDigitalCard = showDigitalCard;
+
+async function downloadMemberCard(){
+  const card = document.getElementById('digitalCard');
+  // Scale up to 1080x1350
+  try {
+    showLoading('Generating PNG…');
+    const canvas = await html2canvas(card, {
+      scale: 2.7,           // 400*2.7=1080, 500*2.7=1350
+      useCORS: true,
+      backgroundColor: '#f0f4f8',
+      logging: false
+    });
+    hideLoading();
+    const link = document.createElement('a');
+    link.download = `MBC-Card-${_dcMember?_dcMember.code:'member'}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('✓ Card downloaded as PNG!');
+  } catch(e) {
+    hideLoading();
+    console.error(e);
+    showToast('⚠ Download failed. Try again.');
+  }
+}
+window.downloadMemberCard = downloadMemberCard;
+
+function sendCardViaWA(){
+  if(!_dcMember) return;
+  const msg = `Halo ${_dcMember.name}! 👋\n\nBerikut informasi membership Muscle Beach Club Anda:\n\n🪪 Member ID: ${_dcMember.code}\n📦 Paket: ${_dcMember.pkgName}\n📅 Berlaku hingga: ${_dcMember.expiryDate}\n\nTunjukkan QR code Anda saat check-in.\n\nSalam,\nMuscle Beach Club 💪`;
+  window.open(`https://wa.me/${(_dcMember.phone||'').replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`,'_blank');
+  showToast('Opening WhatsApp…');
+}
+window.sendCardViaWA = sendCardViaWA;
 
 // ============================================================
 // ADMIN — PRICING
 // ============================================================
 async function renderPricingAdmin(){
-  const pkgs = await dbGetPackages();
-  document.getElementById('pricingTbody').innerHTML = pkgs.map(p => `
+  const pkgs=await dbGetPackages();
+  document.getElementById('pricingTbody').innerHTML=pkgs.map(p=>`
     <tr>
-      <td>${p.name}</td>
-      <td>${p.days} day(s)</td>
+      <td>${p.name}</td><td>${p.days} day(s)</td>
       <td><input class="price-input" type="number" id="price-${p.id}" value="${p.price}"></td>
       <td><input class="price-input" style="width:180px;" type="text" id="promo-${p.id}" value="${p.promo||''}"></td>
     </tr>`).join('');
 }
 async function savePricing(){
   showLoading('Saving prices…');
-  const pkgs = await dbGetPackages();
-  pkgs.forEach(p => {
-    const inp = document.getElementById('price-'+p.id);
-    const pr  = document.getElementById('promo-'+p.id);
-    if(inp) p.price = Number(inp.value);
-    if(pr)  p.promo = pr.value;
+  const pkgs=await dbGetPackages();
+  pkgs.forEach(p=>{
+    const inp=document.getElementById('price-'+p.id);
+    const pr=document.getElementById('promo-'+p.id);
+    if(inp) p.price=Number(inp.value);
+    if(pr) p.promo=pr.value;
   });
   await dbSavePackages(pkgs);
-  window._pkgCache = pkgs;
+  window._pkgCache=pkgs;
   hideLoading();
   await renderPackages();
   showToast('Prices updated & synced! ✓');
 }
-window.renderPricingAdmin = renderPricingAdmin;
-window.savePricing        = savePricing;
+window.renderPricingAdmin=renderPricingAdmin; window.savePricing=savePricing;
 
 // ============================================================
 // ADMIN — PROMO
 // ============================================================
 async function renderPromoAdmin(){
-  const promos = await dbGetPromos();
-  const list   = document.getElementById('adminPromoList');
-  if(!promos.length){
-    list.innerHTML = '<p style="font-size:13px;color:var(--gray);padding:1rem;">No promos yet.</p>';
-    return;
-  }
-  list.innerHTML = promos.map(pr => `
+  const promos=await dbGetPromos();
+  const list=document.getElementById('adminPromoList');
+  if(!promos.length){ list.innerHTML='<p style="font-size:13px;color:var(--gray);padding:1rem;">No promos yet.</p>'; return; }
+  list.innerHTML=promos.map(pr=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;border-bottom:1px solid var(--border);">
-      <div>
-        <strong style="font-family:var(--font-cond);">${pr.title}</strong><br>
-        <small style="color:var(--gray);">${(pr.desc||'').substring(0,60)}…</small>
-      </div>
+      <div><strong style="font-family:var(--font-cond);">${pr.title}</strong><br><small style="color:var(--gray);">${(pr.desc||'').substring(0,60)}…</small></div>
       <button class="action-btn danger" onclick="deletePromo('${pr._id}')">Delete</button>
     </div>`).join('');
 }
 async function addPromo(){
-  const title = document.getElementById('promoTitle').value.trim();
-  const desc  = document.getElementById('promoDesc').value.trim();
-  const img   = document.getElementById('promoImg').value.trim();
-  const tag   = document.getElementById('promoTag').value.trim();
+  const title=document.getElementById('promoTitle').value.trim();
+  const desc=document.getElementById('promoDesc').value.trim();
+  const img=document.getElementById('promoImg').value.trim();
+  const tag=document.getElementById('promoTag').value.trim();
   if(!title){ showToast('Please enter a title'); return; }
-  showLoading('Publishing promo…');
-  await dbAddPromo({title, desc, img, tag});
+  showLoading('Publishing…');
+  await dbAddPromo({title,desc,img,tag});
   hideLoading();
-  await renderPromos();
-  await renderPromoAdmin();
-  ['promoTitle','promoDesc','promoImg','promoTag'].forEach(id => document.getElementById(id).value='');
-  showToast('Promo published & live! ✓');
+  await renderPromos(); await renderPromoAdmin();
+  ['promoTitle','promoDesc','promoImg','promoTag'].forEach(id=>document.getElementById(id).value='');
+  showToast('Promo published! ✓');
 }
 async function deletePromo(id){
   if(!confirm('Delete this promo?')) return;
   showLoading('Deleting…');
-  await dbDeletePromo(id);
-  hideLoading();
-  await renderPromos();
-  await renderPromoAdmin();
+  await dbDeletePromo(id); hideLoading();
+  await renderPromos(); await renderPromoAdmin();
   showToast('Promo deleted');
 }
-window.renderPromoAdmin = renderPromoAdmin;
-window.addPromo         = addPromo;
-window.deletePromo      = deletePromo;
+window.renderPromoAdmin=renderPromoAdmin; window.addPromo=addPromo; window.deletePromo=deletePromo;
 
 // ============================================================
 // ADMIN — MEMBER CRUD
 // ============================================================
 function generateCode(){
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = 'MBC-' + new Date().getFullYear() + '-';
-  for(let i=0;i<6;i++) code += chars[Math.floor(Math.random()*chars.length)];
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code='MBC-'+new Date().getFullYear()+'-';
+  for(let i=0;i<6;i++) code+=chars[Math.floor(Math.random()*chars.length)];
   return code;
 }
 function updateNewPrice(){
-  const sel   = document.getElementById('newPkg');
-  const opt   = sel.options[sel.selectedIndex];
-  const price = opt ? opt.getAttribute('data-price') : '';
-  document.getElementById('newPriceDisplay').textContent = price ? 'IDR '+formatPrice(price) : '–';
+  const sel=document.getElementById('newPkg');
+  const opt=sel.options[sel.selectedIndex];
+  const price=opt?opt.getAttribute('data-price'):'';
+  document.getElementById('newPriceDisplay').textContent=price?'IDR '+formatPrice(price):'–';
 }
+
 async function registerMember(){
-  const name      = document.getElementById('newName').value.trim();
-  const phone     = document.getElementById('newPhone').value.trim();
-  const pkgId     = document.getElementById('newPkg').value;
-  const startDate = document.getElementById('newStart').value;
-  const discount  = Number(document.getElementById('newDiscount').value) || 0;
+  const name=document.getElementById('newName').value.trim();
+  const phone=document.getElementById('newPhone').value.trim();
+  const pkgId=document.getElementById('newPkg').value;
+  const startDate=document.getElementById('newStart').value;
+  const discount=Number(document.getElementById('newDiscount').value)||0;
   if(!name||!phone||!pkgId||!startDate){ showToast('Fill all required fields'); return; }
-
   showLoading('Registering member…');
-  const pkgs = await dbGetPackages();
-  const p    = pkgs.find(x => x.id === pkgId);
+  const pkgs=await dbGetPackages();
+  const p=pkgs.find(x=>x.id===pkgId);
   if(!p){ hideLoading(); showToast('Package not found'); return; }
-
-  const code   = generateCode();
-  const start  = new Date(startDate);
-  const expiry = new Date(start);
-  expiry.setDate(expiry.getDate() + p.days);
-  const discountedPrice = Math.round(p.price * (1 - discount/100));
-
-  const member = {
-    code, name, phone, pkgId, pkgName: p.name,
-    startDate:  start.toISOString().split('T')[0],
-    expiryDate: expiry.toISOString().split('T')[0],
-    discount, price: discountedPrice,
-    registeredAt: new Date().toISOString()
+  const code=generateCode();
+  const start=new Date(startDate);
+  const expiry=new Date(start);
+  expiry.setDate(expiry.getDate()+p.days);
+  const discountedPrice=Math.round(p.price*(1-discount/100));
+  const member={
+    code, name, phone, pkgId, pkgName:p.name,
+    startDate:start.toISOString().split('T')[0],
+    expiryDate:expiry.toISOString().split('T')[0],
+    discount, price:discountedPrice,
+    registeredAt:new Date().toISOString()
   };
-
   await dbSaveMember(member);
   hideLoading();
 
-  // Show generated card
-  document.getElementById('newMemberResult').style.display = 'block';
-  document.getElementById('genCode').textContent = code;
-  document.getElementById('genDetails').innerHTML = `
+  // Show result panel
+  document.getElementById('newMemberResult').style.display='block';
+  document.getElementById('genCode').textContent=code;
+  document.getElementById('genDetails').innerHTML=`
     Name: <strong style="color:var(--white)">${name}</strong><br>
     Phone: <strong style="color:var(--white)">${phone}</strong><br>
     Package: <strong style="color:var(--white)">${p.name}</strong><br>
     Price: <strong style="color:var(--blue)">IDR ${formatPrice(discountedPrice)}</strong>${discount?` (${discount}% off)`:''}<br>
     Start: <strong style="color:var(--white)">${member.startDate}</strong><br>
-    Expiry: <strong style="color:var(--white)">${member.expiryDate}</strong>`;
-  const qrDiv = document.getElementById('genQR');
-  qrDiv.innerHTML = '';
-  new QRCode(qrDiv, {text: code, width:128, height:128});
-  showToast('✓ Member registered & synced: ' + code);
-
-  // Reset form
-  ['newName','newPhone','newDiscount'].forEach(id => document.getElementById(id).value='');
-  document.getElementById('newPkg').value = '';
-  document.getElementById('newPriceDisplay').textContent = '–';
-  document.getElementById('newStart').value = new Date().toISOString().split('T')[0];
+    Expiry: <strong style="color:var(--white)">${member.expiryDate}</strong><br><br>
+    <button class="btn btn-primary btn-sm" onclick="showDigitalCard('${code}')">🪪 Generate Digital Card</button>`;
+  const qrDiv=document.getElementById('genQR');
+  qrDiv.innerHTML='';
+  new QRCode(qrDiv,{text:code,width:128,height:128});
+  showToast('✓ Member registered: '+code);
+  ['newName','newPhone','newDiscount'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('newPkg').value='';
+  document.getElementById('newPriceDisplay').textContent='–';
+  document.getElementById('newStart').value=new Date().toISOString().split('T')[0];
   renderOverview();
 }
+
 async function extendMember(code){
-  const pkgId = prompt('Enter package ID to extend\n(daily / 2days / weekly / monthly / 3months / 6months / annual):');
+  const pkgId=prompt('Enter package ID to extend\n(daily/2days/weekly/monthly/3months/6months/annual):');
   if(!pkgId) return;
-  showLoading('Extending membership…');
-  const pkgs = await dbGetPackages();
-  const p    = pkgs.find(x => x.id === pkgId.trim().toLowerCase());
+  showLoading('Extending…');
+  const pkgs=await dbGetPackages();
+  const p=pkgs.find(x=>x.id===pkgId.trim().toLowerCase());
   if(!p){ hideLoading(); showToast('Invalid package ID'); return; }
-  const m = await dbGetMemberByCode(code);
+  const m=await dbGetMemberByCode(code);
   if(!m){ hideLoading(); return; }
-  const today = new Date(); today.setHours(0,0,0,0);
-  const base  = new Date(m.expiryDate) >= today ? new Date(m.expiryDate) : today;
-  base.setDate(base.getDate() + p.days);
-  const newExpiry = base.toISOString().split('T')[0];
-  await dbUpdateMember(code, {expiryDate: newExpiry, pkgName: p.name});
+  const today=new Date(); today.setHours(0,0,0,0);
+  const base=new Date(m.expiryDate)>=today?new Date(m.expiryDate):today;
+  base.setDate(base.getDate()+p.days);
+  await dbUpdateMember(code,{expiryDate:base.toISOString().split('T')[0],pkgName:p.name});
   hideLoading();
   renderMembersTable();
-  showToast('✓ Extended to ' + newExpiry);
+  showToast('✓ Extended to '+base.toISOString().split('T')[0]);
 }
+
 async function editDiscount(code){
-  const d = prompt('Enter new discount %:');
-  if(d === null) return;
-  showLoading('Updating discount…');
-  await dbUpdateMember(code, {discount: Number(d)});
+  const d=prompt('Enter new discount %:');
+  if(d===null) return;
+  showLoading('Updating…');
+  await dbUpdateMember(code,{discount:Number(d)});
   hideLoading();
   renderMembersTable();
   showToast('✓ Discount updated');
 }
+
 async function deleteMember(code){
-  if(!confirm('Delete member ' + code + '?\nThis cannot be undone.')) return;
+  if(!confirm('Delete member '+code+'?\nThis cannot be undone.')) return;
   showLoading('Deleting…');
   await dbDeleteMember(code);
   hideLoading();
-  renderMembersTable();
-  renderOverview();
+  renderMembersTable(); renderOverview();
   showToast('Member deleted');
 }
-async function exportMembers(){
-  showLoading('Preparing export…');
-  const members = await dbGetMembers();
-  hideLoading();
-  const header = 'Code,Name,Phone,Package,Start,Expiry,Discount,Price\n';
-  const rows   = members.map(m =>
-    `${m.code},${m.name},${m.phone||''},${m.pkgName},${m.startDate},${m.expiryDate},${m.discount||0}%,${m.price||''}`
-  ).join('\n');
-  const blob = new Blob([header+rows], {type:'text/csv'});
-  const a    = document.createElement('a');
-  a.href     = URL.createObjectURL(blob);
-  a.download = `MBC_Members_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-  showToast('✓ CSV exported');
-}
-window.updateNewPrice  = updateNewPrice;
-window.registerMember  = registerMember;
-window.extendMember    = extendMember;
-window.editDiscount    = editDiscount;
-window.deleteMember    = deleteMember;
-window.exportMembers   = exportMembers;
+
+window.updateNewPrice=updateNewPrice; window.registerMember=registerMember;
+window.extendMember=extendMember; window.editDiscount=editDiscount; window.deleteMember=deleteMember;
 
 // ============================================================
-// SCAN MEMBER (lookup after QR scan or manual entry)
+// EXPORT CSV — with month/year filter
+// ============================================================
+async function exportMembers(src){
+  // src=1 → overview filters, src=2 → members tab filters
+  const monthSel = src===2 ? document.getElementById('csvMonth2') : document.getElementById('csvMonth');
+  const yearSel  = src===2 ? document.getElementById('csvYear2')  : document.getElementById('csvYear');
+  const month = monthSel ? monthSel.value : '';
+  const year  = yearSel  ? yearSel.value  : '';
+
+  showLoading('Preparing export…');
+  let members = await dbGetMembers();
+  hideLoading();
+
+  if(month||year){
+    members = members.filter(m=>{
+      const d = new Date(m.startDate);
+      const mOk = !month || (d.getMonth()+1)===Number(month);
+      const yOk = !year  || d.getFullYear()===Number(year);
+      return mOk && yOk;
+    });
+  }
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const header = 'Code,Name,Phone,Package,Start,Expiry,Status,Discount,Price\n';
+  const rows   = members.map(m=>{
+    const st = new Date(m.expiryDate)>=today ? 'Active' : 'Expired';
+    return `${m.code},"${m.name}",${m.phone||''},${m.pkgName},${m.startDate},${m.expiryDate},${st},${m.discount||0}%,${m.price||''}`;
+  }).join('\n');
+
+  const suffix = [year,month?month.padStart(2,'0'):''].filter(Boolean).join('-');
+  const blob = new Blob([header+rows],{type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `MBC_Members${suffix?'_'+suffix:''}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast(`✓ Exported ${members.length} members`);
+}
+window.exportMembers=exportMembers;
+
+// ============================================================
+// SCAN MEMBER (old scan tab — lookup only)
 // ============================================================
 async function scanMember(){
-  const raw = (document.getElementById('scanCode').value || '').trim().toUpperCase();
+  const raw=(document.getElementById('scanCode').value||'').trim().toUpperCase();
   if(!raw){ showToast('Enter a member code'); return; }
-  showLoading('Looking up member…');
-  const m = await dbGetMemberByCode(raw);
+  showLoading('Looking up…');
+  const m=await dbGetMemberByCode(raw);
   hideLoading();
-  const resultDiv = document.getElementById('scanResult');
+  const resultDiv=document.getElementById('scanResult');
   if(!m){
-    resultDiv.innerHTML = `
-      <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);padding:1.5rem;">
-        <p style="color:#ef4444;font-family:var(--font-cond);font-size:14px;letter-spacing:1px;">❌ MEMBER NOT FOUND</p>
-        <p style="font-size:13px;color:var(--gray);margin-top:.5rem;">Code "${raw}" is not registered.</p>
-      </div>`;
+    resultDiv.innerHTML=`<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);padding:1.5rem;"><p style="color:#ef4444;font-family:var(--font-cond);font-size:14px;letter-spacing:1px;">❌ MEMBER NOT FOUND</p><p style="font-size:13px;color:var(--gray);margin-top:.5rem;">Code "${raw}" is not registered.</p></div>`;
     if(navigator.vibrate) navigator.vibrate([200]);
     return;
   }
-  const today  = new Date(); today.setHours(0,0,0,0);
-  const exp    = new Date(m.expiryDate);
-  const diff   = Math.ceil((exp - today) / 86400000);
-  const active = diff >= 0;
-  const color  = active ? '#22c55e' : '#ef4444';
-  const statusText = active ? `✅ ACTIVE — ${diff} day(s) remaining` : '❌ EXPIRED';
-  resultDiv.innerHTML = `
+  const today=new Date(); today.setHours(0,0,0,0);
+  const exp=new Date(m.expiryDate);
+  const diff=Math.ceil((exp-today)/86400000);
+  const active=diff>=0;
+  const color=active?'#22c55e':'#ef4444';
+  resultDiv.innerHTML=`
     <div style="border:2px solid ${color};padding:1.5rem;background:${active?'rgba(34,197,94,.06)':'rgba(239,68,68,.06)'};">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
-        <div>
-          <div style="font-family:var(--font-head);font-size:28px;">${m.name}</div>
-          <div style="font-family:var(--font-cond);font-size:13px;color:var(--gray);margin-top:.25rem;">${m.code}</div>
-        </div>
-        <div style="font-family:var(--font-cond);font-size:13px;letter-spacing:1px;color:${color};text-align:right;">${statusText}</div>
+        <div><div style="font-family:var(--font-head);font-size:28px;">${m.name}</div><div style="font-family:var(--font-cond);font-size:13px;color:var(--gray);margin-top:.25rem;">${m.code}</div></div>
+        <div style="font-family:var(--font-cond);font-size:13px;letter-spacing:1px;color:${color};text-align:right;">${active?`✅ ACTIVE — ${diff} day(s) remaining`:'❌ EXPIRED'}</div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1.25rem;">
         <div><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);font-family:var(--font-cond);">Package</div><div style="font-size:15px;margin-top:.2rem;">${m.pkgName}</div></div>
@@ -1603,183 +1831,264 @@ async function scanMember(){
         <div><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);font-family:var(--font-cond);">Expiry</div><div style="font-size:15px;margin-top:.2rem;color:${color};">${m.expiryDate}</div></div>
       </div>
     </div>`;
-  if(navigator.vibrate) navigator.vibrate(active ? [100] : [200,100,200]);
+  if(navigator.vibrate) navigator.vibrate(active?[100]:[200,100,200]);
 }
-window.scanMember = scanMember;
+window.scanMember=scanMember;
 
 // ============================================================
-// CHATBOX
+// CHECK-IN SYSTEM — Camera scanner (ci prefix)
 // ============================================================
-const chatKB = {
-  facilities:'Infrared Sauna, Ice Bath, Boxing Room, Pole Dance Studio, Indoor Gym, Outdoor CrossFit, Swimming Pool, Fitbar & Protein Bar',
-  packages:  'Daily (IDR 220K), 2 Days (IDR 500K), Weekly (IDR 850K), 1 Month (IDR 1.2M), 3 Months (IDR 3.05M), 6 Months (IDR 5.76M), 12 Months (IDR 10M)',
-  services:  'Personal Trainer, Pole Dance Class (375K/class), Pole Self Practice (300K/hr), Studio Rental (250K/hr), Boxing Room (75K/pax)',
-  location:  'Jl. Raya Uluwatu, Pecatu, Kuta Selatan, Badung, Bali 80361',
-  contact:   'WhatsApp: +62 813-3915-6003 | Instagram: @musclebeachclub',
-  hours:     'Open daily — contact us for exact schedule'
-};
-function getAIReply(msg){
-  const m = msg.toLowerCase();
-  if(m.includes('facility')||m.includes('fasilitas')||m.includes('sauna')||m.includes('pool')||m.includes('gym'))
-    return '🏋️ Our facilities:\n' + chatKB.facilities;
-  if(m.includes('price')||m.includes('harga')||m.includes('package')||m.includes('paket')||m.includes('cost'))
-    return '💰 Our packages:\n' + chatKB.packages;
-  if(m.includes('service')||m.includes('layanan'))
-    return '🎯 Our services:\n' + chatKB.services;
-  if(m.includes('location')||m.includes('where')||m.includes('address')||m.includes('lokasi')||m.includes('alamat'))
-    return '📍 ' + chatKB.location;
-  if(m.includes('contact')||m.includes('whatsapp')||m.includes('wa')||m.includes('kontak'))
-    return '📱 ' + chatKB.contact;
-  if(m.includes('hour')||m.includes('open')||m.includes('jam')||m.includes('buka'))
-    return '🕐 ' + chatKB.hours;
-  if(m.includes('join')||m.includes('member')||m.includes('register')||m.includes('daftar'))
-    return '💪 Click "Join Now" and pick a package! Or WhatsApp us at +62 813-3915-6003.';
-  if(m.includes('ice bath')||m.includes('cold'))
-    return '🧊 Ice Bath available — reduces inflammation and speeds up recovery!';
-  if(m.includes('pole')||m.includes('dance'))
-    return '💃 Pole Dance Class: IDR 375K/class. Self Practice: IDR 300K/hr. Studio also rentable!';
-  return "Great question! Contact us: WhatsApp +62 813-3915-6003 or visit us in Uluwatu, Bali. 🌴";
-}
-function sendChat(){
-  const input = document.getElementById('chatInput');
-  const msg   = input.value.trim();
-  if(!msg) return;
-  const msgs = document.getElementById('chatMessages');
-  msgs.innerHTML += `<div class="chat-msg user">${msg}</div>`;
-  input.value = '';
-  setTimeout(() => {
-    const reply = getAIReply(msg);
-    msgs.innerHTML += `<div class="chat-msg bot">${reply.replace(/\n/g,'<br>')}</div>`;
-    msgs.scrollTop = msgs.scrollHeight;
-  }, 600);
-  msgs.scrollTop = msgs.scrollHeight;
-}
-function toggleChat(){ document.getElementById('chatbox').classList.toggle('open'); }
-window.sendChat   = sendChat;
-window.toggleChat = toggleChat;
-
-// ============================================================
-// CAMERA QR SCANNER
-// ============================================================
-let scanStream = null, scanAnimFrame = null, useFrontCam = false;
-let lastScanned = '', lastScannedTime = 0;
-
-async function startScanner(){
-  const wrap     = document.getElementById('scannerWrap');
-  const video    = document.getElementById('scanVideo');
-  const startBtn = document.getElementById('startScanBtn');
-  const stopBtn  = document.getElementById('stopScanBtn');
-  const flipBtn  = document.getElementById('flipCamBtn');
-  const notice   = document.getElementById('noCameraNotice');
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
-    notice.style.display='block'; return;
-  }
-  try {
-    if(scanStream) stopScanner();
-    scanStream = await navigator.mediaDevices.getUserMedia({
-      video:{ facingMode: useFrontCam ? 'user' : {ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} }
-    });
-    video.srcObject = scanStream;
+async function ciStartScanner(){
+  const wrap=document.getElementById('ciScannerWrap');
+  const video=document.getElementById('ciVideo');
+  const startBtn=document.getElementById('ciStartBtn');
+  const stopBtn=document.getElementById('ciStopBtn');
+  const flipBtn=document.getElementById('ciFlipBtn');
+  const notice=document.getElementById('ciNoCam');
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ notice.style.display='block'; return; }
+  try{
+    if(ciStream) ciStopScanner();
+    ciStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:ciUseFront?'user':{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
+    video.srcObject=ciStream;
     await video.play();
     wrap.style.display='block'; notice.style.display='none';
-    startBtn.style.display='none';
-    stopBtn.style.display='inline-flex';
-    flipBtn.style.display='inline-flex';
+    startBtn.style.display='none'; stopBtn.style.display='inline-flex'; flipBtn.style.display='inline-flex';
+    ciTick();
+  }catch(e){ notice.style.display='block'; console.warn('CI camera error:',e); }
+}
+function ciStopScanner(){
+  if(ciStream){ ciStream.getTracks().forEach(t=>t.stop()); ciStream=null; }
+  if(ciAnimFrame){ cancelAnimationFrame(ciAnimFrame); ciAnimFrame=null; }
+  const w=document.getElementById('ciScannerWrap');
+  const s=document.getElementById('ciStartBtn');
+  const st=document.getElementById('ciStopBtn');
+  const f=document.getElementById('ciFlipBtn');
+  if(w) w.style.display='none';
+  if(s) s.style.display='inline-flex';
+  if(st) st.style.display='none';
+  if(f) f.style.display='none';
+}
+function ciFlipCamera(){ ciUseFront=!ciUseFront; ciStartScanner(); }
+
+function ciTick(){
+  const video=document.getElementById('ciVideo');
+  const canvas=document.getElementById('ciCanvas');
+  if(!ciStream||video.readyState!==video.HAVE_ENOUGH_DATA){ ciAnimFrame=requestAnimationFrame(ciTick); return; }
+  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(video,0,0,canvas.width,canvas.height);
+  const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+  const code=jsQR(imageData.data,imageData.width,imageData.height,{inversionAttempts:'dontInvert'});
+  if(code&&code.data){
+    const now=Date.now();
+    if(code.data!==ciLastScan||now-ciLastTime>3000){
+      ciLastScan=code.data; ciLastTime=now;
+      ciOnScanned(code.data);
+    }
+  }
+  ciAnimFrame=requestAnimationFrame(ciTick);
+}
+
+function ciOnScanned(raw){
+  const code=normCode(raw);
+  document.getElementById('ciCode').value=code;
+  const s=document.getElementById('ciScanStatus');
+  s.textContent='✓ Detected: '+code; s.style.color='#22c55e';
+  setTimeout(()=>{ if(s){ s.textContent='Scanning…'; s.style.color='var(--blue)'; }},2500);
+  setTimeout(ciLookup,80);
+  if(navigator.vibrate) navigator.vibrate([80,40,80]);
+}
+
+async function ciLookup(){
+  const raw=(document.getElementById('ciCode').value||'').trim().toUpperCase();
+  if(!raw){ showToast('Enter a member code'); return; }
+  showLoading('Looking up member…');
+  const m=await dbGetMemberByCode(raw);
+  hideLoading();
+  if(!m){
+    document.getElementById('ciResultWrap').style.display='none';
+    showToast('❌ Member not found: '+raw);
+    return;
+  }
+  ciCurrentMember=m;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const exp=new Date(m.expiryDate);
+  const diff=Math.ceil((exp-today)/86400000);
+  const active=diff>=0;
+
+  // Show popup
+  document.getElementById('ciPopupId').textContent=m.code;
+  document.getElementById('ciPopupName').textContent=m.name.toUpperCase();
+  document.getElementById('ciPopupPhone').textContent=m.phone||'';
+  document.getElementById('ciPopupExpiry').textContent='Expires: '+m.expiryDate+(active?` (${diff} days left)`:'');
+
+  const statusEl=document.getElementById('ciPopupStatus');
+  const btn=document.getElementById('ciPopupBtn');
+  if(active){
+    statusEl.textContent='ACTIVE';
+    statusEl.style.background='#2e7d32'; statusEl.style.color='#fff';
+    btn.style.display='block'; btn.style.background='#1a5fb4';
+  } else {
+    statusEl.textContent='EXPIRED';
+    statusEl.style.background='#c62828'; statusEl.style.color='#fff';
+    btn.style.display='block'; btn.style.background='#555';
+  }
+  document.getElementById('ciPopupModal').style.display='flex';
+}
+
+async function confirmCheckIn(){
+  if(!ciCurrentMember){ return; }
+  const m=ciCurrentMember;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const active=new Date(m.expiryDate)>=today;
+  const status=active?'active':'expired';
+
+  showLoading('Recording check-in…');
+  await dbAddCheckIn(m.code, m.name, m.pkgName, status);
+  hideLoading();
+
+  document.getElementById('ciPopupModal').style.display='none';
+  document.getElementById('ciCode').value='';
+  ciCurrentMember=null;
+
+  showToast(`✓ Check-in recorded for ${m.name}`);
+  renderTodayLog();
+}
+
+async function renderTodayLog(){
+  showLoading('Loading today\'s log…');
+  const logs=await dbGetTodayCheckIns();
+  hideLoading();
+  const tbody=document.getElementById('ciTodayLog');
+  if(!tbody) return;
+  if(!logs.length){
+    tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--gray);padding:1.5rem;">No check-ins recorded today.</td></tr>';
+    return;
+  }
+  tbody.innerHTML=logs.map(l=>`
+    <tr>
+      <td>${l.time||'-'}</td>
+      <td><small>${l.memberCode}</small></td>
+      <td>${l.memberName}</td>
+      <td>${l.pkgName||'-'}</td>
+      <td><span class="badge ${l.status==='active'?'badge-active':'badge-expired'}">${l.status}</span></td>
+    </tr>`).join('');
+}
+
+window.ciStartScanner=ciStartScanner; window.ciStopScanner=ciStopScanner;
+window.ciFlipCamera=ciFlipCamera; window.ciLookup=ciLookup;
+window.confirmCheckIn=confirmCheckIn; window.renderTodayLog=renderTodayLog;
+
+// ============================================================
+// OLD SCAN TAB — camera scanner
+// ============================================================
+let scanStream=null, scanAnimFrame=null, useFrontCam=false, lastScanned='', lastScannedTime=0;
+async function startScanner(){
+  const wrap=document.getElementById('scannerWrap'); const video=document.getElementById('scanVideo');
+  const startBtn=document.getElementById('startScanBtn'); const stopBtn=document.getElementById('stopScanBtn');
+  const flipBtn=document.getElementById('flipCamBtn'); const notice=document.getElementById('noCameraNotice');
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ notice.style.display='block'; return; }
+  try{
+    if(scanStream) stopScanner();
+    scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:useFrontCam?'user':{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
+    video.srcObject=scanStream; await video.play();
+    wrap.style.display='block'; notice.style.display='none';
+    startBtn.style.display='none'; stopBtn.style.display='inline-flex'; flipBtn.style.display='inline-flex';
     tickScanner();
-  } catch(e){ notice.style.display='block'; console.warn('Camera error:',e); }
+  }catch(e){ notice.style.display='block'; console.warn('Camera error:',e); }
 }
 function stopScanner(){
   if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
   if(scanAnimFrame){ cancelAnimationFrame(scanAnimFrame); scanAnimFrame=null; }
-  const w  = document.getElementById('scannerWrap');
-  const s  = document.getElementById('startScanBtn');
-  const st = document.getElementById('stopScanBtn');
-  const f  = document.getElementById('flipCamBtn');
-  if(w)  w.style.display  = 'none';
-  if(s)  s.style.display  = 'inline-flex';
-  if(st) st.style.display = 'none';
-  if(f)  f.style.display  = 'none';
+  const w=document.getElementById('scannerWrap'); const s=document.getElementById('startScanBtn');
+  const st=document.getElementById('stopScanBtn'); const f=document.getElementById('flipCamBtn');
+  if(w)w.style.display='none'; if(s)s.style.display='inline-flex'; if(st)st.style.display='none'; if(f)f.style.display='none';
 }
-function flipCamera(){ useFrontCam = !useFrontCam; startScanner(); }
+function flipCamera(){ useFrontCam=!useFrontCam; startScanner(); }
 function tickScanner(){
-  const video  = document.getElementById('scanVideo');
-  const canvas = document.getElementById('scanCanvas');
-  if(!scanStream || video.readyState !== video.HAVE_ENOUGH_DATA){
-    scanAnimFrame = requestAnimationFrame(tickScanner); return;
+  const video=document.getElementById('scanVideo'); const canvas=document.getElementById('scanCanvas');
+  if(!scanStream||video.readyState!==video.HAVE_ENOUGH_DATA){ scanAnimFrame=requestAnimationFrame(tickScanner); return; }
+  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+  const ctx=canvas.getContext('2d'); ctx.drawImage(video,0,0,canvas.width,canvas.height);
+  const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+  const code=jsQR(imageData.data,imageData.width,imageData.height,{inversionAttempts:'dontInvert'});
+  if(code&&code.data){
+    const now=Date.now();
+    if(code.data!==lastScanned||now-lastScannedTime>3000){ lastScanned=code.data; lastScannedTime=now; onCodeScanned(code.data); }
   }
-  canvas.width  = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
-  const code = jsQR(imageData.data, imageData.width, imageData.height, {inversionAttempts:'dontInvert'});
-  if(code && code.data){
-    const now = Date.now();
-    if(code.data !== lastScanned || now - lastScannedTime > 3000){
-      lastScanned = code.data; lastScannedTime = now;
-      onCodeScanned(code.data);
-    }
-  }
-  scanAnimFrame = requestAnimationFrame(tickScanner);
+  scanAnimFrame=requestAnimationFrame(tickScanner);
 }
 function onCodeScanned(raw){
-  const code = normCode(raw);
-  document.getElementById('scanCode').value = code;
-  const status = document.getElementById('scanStatus');
-  status.textContent = '✓ Code detected: ' + code;
-  status.style.color = '#22c55e';
-  setTimeout(() => {
-    if(status){ status.textContent='Scanning… point camera at QR code'; status.style.color='var(--blue)'; }
-  }, 2500);
-  setTimeout(scanMember, 50);
+  const code=normCode(raw);
+  document.getElementById('scanCode').value=code;
+  const s=document.getElementById('scanStatus');
+  s.textContent='✓ Code detected: '+code; s.style.color='#22c55e';
+  setTimeout(()=>{ if(s){ s.textContent='Scanning… point camera at QR code'; s.style.color='var(--blue)'; }},2500);
+  setTimeout(scanMember,50);
   if(navigator.vibrate) navigator.vibrate([100,50,100]);
 }
-function maybeAutoStartScanner(){
-  if(/iPhone|iPad|Android/i.test(navigator.userAgent)) startScanner();
+function maybeAutoStartScanner(){ if(/iPhone|iPad|Android/i.test(navigator.userAgent)) startScanner(); }
+window.startScanner=startScanner; window.stopScanner=stopScanner;
+window.flipCamera=flipCamera; window.maybeAutoStartScanner=maybeAutoStartScanner;
+
+// ============================================================
+// CHATBOX
+// ============================================================
+const chatKB={
+  facilities:'Infrared Sauna, Ice Bath, Boxing Room, Pole Dance Studio, Indoor Gym, Outdoor CrossFit, Swimming Pool, Fitbar & Protein Bar',
+  packages:'Daily (IDR 220K), 2 Days (IDR 500K), Weekly (IDR 850K), 1 Month (IDR 1.2M), 3 Months (IDR 3.05M), 6 Months (IDR 5.76M), 12 Months (IDR 10M)',
+  services:'Personal Trainer, Pole Dance Class (375K/class), Pole Self Practice (300K/hr), Studio Rental (250K/hr), Boxing Room (75K/pax)',
+  location:'Jl. Raya Uluwatu, Pecatu, Kuta Selatan, Badung, Bali 80361',
+  contact:'WhatsApp: +62 813-3915-6003 | Instagram: @musclebeachclub',
+  hours:'Open daily — contact us for exact schedule'
+};
+function getAIReply(msg){
+  const m=msg.toLowerCase();
+  if(m.includes('facility')||m.includes('fasilitas')||m.includes('sauna')||m.includes('pool')) return '🏋️ Our facilities:\n'+chatKB.facilities;
+  if(m.includes('price')||m.includes('harga')||m.includes('package')||m.includes('paket')) return '💰 Our packages:\n'+chatKB.packages;
+  if(m.includes('service')||m.includes('layanan')) return '🎯 Our services:\n'+chatKB.services;
+  if(m.includes('location')||m.includes('where')||m.includes('lokasi')||m.includes('alamat')) return '📍 '+chatKB.location;
+  if(m.includes('contact')||m.includes('whatsapp')||m.includes('kontak')) return '📱 '+chatKB.contact;
+  if(m.includes('hour')||m.includes('open')||m.includes('jam')||m.includes('buka')) return '🕐 '+chatKB.hours;
+  if(m.includes('join')||m.includes('member')||m.includes('register')||m.includes('daftar')) return '💪 Click "Join Now" and pick a package! Or WhatsApp us at +62 813-3915-6003.';
+  if(m.includes('pole')||m.includes('dance')) return '💃 Pole Dance Class: IDR 375K/class. Self Practice: IDR 300K/hr.';
+  return "Great question! Contact us: WhatsApp +62 813-3915-6003 or visit us in Uluwatu, Bali. 🌴";
 }
-window.startScanner          = startScanner;
-window.stopScanner           = stopScanner;
-window.flipCamera            = flipCamera;
-window.maybeAutoStartScanner = maybeAutoStartScanner;
+function sendChat(){
+  const input=document.getElementById('chatInput'); const msg=input.value.trim(); if(!msg) return;
+  const msgs=document.getElementById('chatMessages');
+  msgs.innerHTML+=`<div class="chat-msg user">${msg}</div>`; input.value='';
+  setTimeout(()=>{ const reply=getAIReply(msg); msgs.innerHTML+=`<div class="chat-msg bot">${reply.replace(/\n/g,'<br>')}</div>`; msgs.scrollTop=msgs.scrollHeight; },600);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+function toggleChat(){ document.getElementById('chatbox').classList.toggle('open'); }
+window.sendChat=sendChat; window.toggleChat=toggleChat;
 
 // ============================================================
 // MOBILE NAV
 // ============================================================
 function toggleMobileNav(){
-  const nav = document.getElementById('navLinks');
-  const open = nav.style.display === 'flex';
-  nav.style.display       = open ? 'none' : 'flex';
-  nav.style.flexDirection = 'column';
-  nav.style.position      = 'absolute';
-  nav.style.top           = '70px';
-  nav.style.left          = '0';
-  nav.style.right         = '0';
-  nav.style.background    = 'var(--dark)';
-  nav.style.padding       = '1rem 2rem';
-  nav.style.borderBottom  = '1px solid var(--border)';
+  const nav=document.getElementById('navLinks');
+  const open=nav.style.display==='flex';
+  Object.assign(nav.style,{display:open?'none':'flex',flexDirection:'column',position:'absolute',top:'70px',left:'0',right:'0',background:'var(--dark)',padding:'1rem 2rem',borderBottom:'1px solid var(--border)'});
 }
-window.toggleMobileNav = toggleMobileNav;
+window.toggleMobileNav=toggleMobileNav;
 
 // ============================================================
-// INIT — runs once DOM is ready
+// INIT
 // ============================================================
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', async ()=>{
   showLoading('Connecting to database…');
-  try {
+  try{
     initHero();
     await renderPackages();
     await renderPromos();
-  } catch(e){
-    console.error('Init error:', e);
-    showToast('⚠ Could not connect to database. Check console.');
-  }
+  }catch(e){ console.error('Init error:',e); showToast('⚠ Database connection issue.'); }
   hideLoading();
-
-  const ns = document.getElementById('newStart');
-  if(ns) ns.value = new Date().toISOString().split('T')[0];
-
-  document.querySelectorAll('.modal-overlay').forEach(el => {
-    el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open'); });
+  const ns=document.getElementById('newStart');
+  if(ns) ns.value=new Date().toISOString().split('T')[0];
+  document.querySelectorAll('.modal-overlay').forEach(el=>{
+    el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('open'); });
   });
 });
 
