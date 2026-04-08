@@ -875,57 +875,190 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:3rem 0 
   </div>
 </div>
 
-<script>
+<script type="module">
 // ============================================================
-// DATA STORE (localStorage-based)
+// FIREBASE FIRESTORE — CENTRALIZED DATABASE
 // ============================================================
-const MEMBERS_KEY = 'mbc_members';
-const PACKAGES_KEY = 'mbc_packages';
-const PROMOS_KEY = 'mbc_promos';
+// HOW TO SETUP (ONE TIME, FREE):
+// 1. Go to https://console.firebase.google.com
+// 2. Create a new project (e.g. "muscle-beach-club")
+// 3. Click "Firestore Database" → Create database → Start in TEST mode
+// 4. Click the gear icon → Project Settings → Your Apps → Add Web App
+// 5. Copy your firebaseConfig values and paste them below
+// 6. Done! Database is now shared across all devices.
+// ============================================================
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import {
+  getFirestore, collection, doc, getDocs, getDoc,
+  setDoc, addDoc, updateDoc, deleteDoc,
+  onSnapshot, query, orderBy, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+// ─── PASTE YOUR FIREBASE CONFIG HERE ───────────────────────
+const firebaseConfig = {
+  apiKey:            "AIzaSyAXRZJI7V-qFuLGw6iwO3A5w9v2HqjKQVE",
+  authDomain:        "muscle-beach-club.firebaseapp.com",
+  projectId:         "muscle-beach-club",
+  storageBucket:     "muscle-beach-club.firebasestorage.app",
+  messagingSenderId: "21905482366",
+  appId:             "1:21905482366:web:ec5424be63e1cde0f82e2f"
+};
+// ────────────────────────────────────────────────────────────
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── DB HELPER FUNCTIONS ──────────────────────────────────────
+
+// MEMBERS
+async function getMembers() {
+  try {
+    const snap = await getDocs(collection(db, 'members'));
+    return snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+  } catch(e) {
+    console.warn('Firestore read error (members):', e);
+    return [];
+  }
+}
+
+async function getMemberByCode(code) {
+  try {
+    const snap = await getDocs(collection(db, 'members'));
+    const docs = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+    const norm = c => c.trim().toUpperCase().replace(/\s+/g,'');
+    return docs.find(m => norm(m.code) === norm(code)) || null;
+  } catch(e) { return null; }
+}
+
+async function saveMember(member) {
+  // Use member code as document ID for easy lookup
+  const docId = member.code.replace(/[^a-zA-Z0-9-]/g, '_');
+  await setDoc(doc(db, 'members', docId), { ...member, updatedAt: serverTimestamp() });
+  return docId;
+}
+
+async function updateMember(code, data) {
+  const m = await getMemberByCode(code);
+  if (!m || !m._id) return;
+  await updateDoc(doc(db, 'members', m._id), { ...data, updatedAt: serverTimestamp() });
+}
+
+async function deleteMemberFromDB(code) {
+  const m = await getMemberByCode(code);
+  if (!m || !m._id) return;
+  await deleteDoc(doc(db, 'members', m._id));
+}
+
+// PACKAGES
+async function getPackages() {
+  try {
+    const snap = await getDocs(collection(db, 'packages'));
+    if (snap.empty) {
+      // First time: seed defaults
+      await seedPackages();
+      return DEFAULT_PACKAGES;
+    }
+    // Sort by price
+    const pkgs = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+    pkgs.sort((a,b) => a.price - b.price);
+    return pkgs;
+  } catch(e) {
+    console.warn('Firestore read error (packages):', e);
+    return DEFAULT_PACKAGES;
+  }
+}
+
+async function seedPackages() {
+  for (const p of DEFAULT_PACKAGES) {
+    await setDoc(doc(db, 'packages', p.id), p);
+  }
+}
+
+async function savePackages(pkgs) {
+  for (const p of pkgs) {
+    const id = p.id || p._id;
+    await setDoc(doc(db, 'packages', id), p);
+  }
+}
+
+// PROMOS
+async function getPromos() {
+  try {
+    const snap = await getDocs(collection(db, 'promos'));
+    return snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+  } catch(e) { return []; }
+}
+
+async function addPromoDB(promo) {
+  const ref = await addDoc(collection(db, 'promos'), { ...promo, createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+async function deletePromoDB(id) {
+  await deleteDoc(doc(db, 'promos', id));
+}
+
+// ── EXPOSE TO GLOBAL SCOPE (for non-module functions) ───────
+window._db = {
+  getMembers, getMemberByCode, saveMember, updateMember, deleteMemberFromDB,
+  getPackages, savePackages, getPromos, addPromoDB, deletePromoDB
+};
+window._dbReady = true;
+window.dispatchEvent(new Event('dbReady'));
+
+// ============================================================
+// REST OF APP LOGIC (exposed to global via window.*)
+// ============================================================
 
 let currentLang = 'en';
 let currentUser = null;
 let heroIndex = 0;
 
 const DEFAULT_PACKAGES = [
-  {id:'daily',    name:'Daily',     nameId:'Harian',     price:220000,  days:1,  promo:'',                  featured:false},
-  {id:'2days',    name:'2 Days',    nameId:'2 Hari',     price:500000,  days:2,  promo:'Get 1 Day Free – Valid 1 week', featured:false},
-  {id:'weekly',   name:'Weekly',    nameId:'Mingguan',   price:850000,  days:7,  promo:'Get 3 Days Free',   featured:false},
-  {id:'monthly',  name:'1 Month',   nameId:'1 Bulan',    price:1200000, days:30, promo:'',                  featured:true},
-  {id:'3months',  name:'3 Months',  nameId:'3 Bulan',    price:3050000, days:90, promo:'',                  featured:false},
-  {id:'6months',  name:'6 Months',  nameId:'6 Bulan',    price:5760000, days:180,promo:'',                  featured:false},
-  {id:'annual',   name:'12 Months', nameId:'12 Bulan',   price:10000000,days:365,promo:'Best Value',        featured:false},
+  {id:'daily',    name:'Daily',     nameId:'Harian',   price:220000,  days:1,   promo:'',                         featured:false},
+  {id:'2days',    name:'2 Days',    nameId:'2 Hari',   price:500000,  days:2,   promo:'Get 1 Day Free – Valid 1 week', featured:false},
+  {id:'weekly',   name:'Weekly',    nameId:'Mingguan', price:850000,  days:7,   promo:'Get 3 Days Free',           featured:false},
+  {id:'monthly',  name:'1 Month',   nameId:'1 Bulan',  price:1200000, days:30,  promo:'',                         featured:true},
+  {id:'3months',  name:'3 Months',  nameId:'3 Bulan',  price:3050000, days:90,  promo:'',                         featured:false},
+  {id:'6months',  name:'6 Months',  nameId:'6 Bulan',  price:5760000, days:180, promo:'',                         featured:false},
+  {id:'annual',   name:'12 Months', nameId:'12 Bulan', price:10000000,days:365, promo:'Best Value',               featured:false},
 ];
 
-function getPackages(){
-  try{return JSON.parse(localStorage.getItem(PACKAGES_KEY))||DEFAULT_PACKAGES;}catch{return DEFAULT_PACKAGES;}
-}
-function savePackages(p){localStorage.setItem(PACKAGES_KEY,JSON.stringify(p));}
-function getMembers(){
-  try{return JSON.parse(localStorage.getItem(MEMBERS_KEY))||[];}catch{return[];}
-}
-function saveMembers(m){localStorage.setItem(MEMBERS_KEY,JSON.stringify(m));}
-function getPromos(){
-  try{return JSON.parse(localStorage.getItem(PROMOS_KEY))||[];}catch{return[];}
-}
-function savePromos(p){localStorage.setItem(PROMOS_KEY,JSON.stringify(p));}
+function normCode(c){ return c.trim().toUpperCase().replace(/\s+/g,''); }
+function formatPrice(n){ return Number(n).toLocaleString('id-ID'); }
 
-// ============================================================
-// LANGUAGE
-// ============================================================
-function setLang(lang){
+// ── LOADING OVERLAY ─────────────────────────────────────────
+function showLoading(msg='Loading…'){
+  let ov=document.getElementById('dbLoadingOverlay');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='dbLoadingOverlay';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(10,10,10,.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;';
+    ov.innerHTML=`
+      <div style="width:40px;height:40px;border:3px solid rgba(74,179,232,.3);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;"></div>
+      <div id="dbLoadingMsg" style="font-family:var(--font-cond);font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);">${msg}</div>
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
+    document.body.appendChild(ov);
+  } else {
+    document.getElementById('dbLoadingMsg').textContent=msg;
+    ov.style.display='flex';
+  }
+}
+function hideLoading(){ const ov=document.getElementById('dbLoadingOverlay'); if(ov)ov.style.display='none'; }
+
+// ── LANGUAGE ─────────────────────────────────────────────────
+window.setLang = function(lang){
   currentLang=lang;
-  document.querySelectorAll('.lang-btn').forEach(b=>{b.classList.toggle('active',b.textContent===lang.toUpperCase());});
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('active',b.textContent===lang.toUpperCase()));
   document.querySelectorAll('[data-en]').forEach(el=>{
     const t=el.getAttribute('data-'+lang);
     if(t)el.textContent=t;
   });
-}
+};
 
-// ============================================================
-// HERO SLIDER
-// ============================================================
-function initHero(){
+// ── HERO ─────────────────────────────────────────────────────
+window.initHero = function(){
   const slides=document.querySelectorAll('.hero-slide');
   const ind=document.getElementById('heroIndicators');
   slides.forEach((_,i)=>{
@@ -935,24 +1068,31 @@ function initHero(){
     ind.appendChild(d);
   });
   setInterval(()=>goHero((heroIndex+1)%slides.length),5000);
-}
+};
 function goHero(i){
   const slides=document.querySelectorAll('.hero-slide');
   const dots=document.querySelectorAll('.hero-dot');
-  slides[heroIndex].classList.remove('active');
-  dots[heroIndex].classList.remove('active');
-  heroIndex=i;
-  slides[heroIndex].classList.add('active');
-  dots[heroIndex].classList.add('active');
+  slides[heroIndex].classList.remove('active'); dots[heroIndex].classList.remove('active');
+  heroIndex=i; slides[i].classList.add('active'); dots[i].classList.add('active');
 }
+window.goHero = goHero;
 
-// ============================================================
-// PACKAGES RENDER
-// ============================================================
-function renderPackages(){
-  const pkgs=getPackages();
-  const grid=document.getElementById('pkgGrid');
-  grid.innerHTML=pkgs.map(p=>`
+// ── TOAST ────────────────────────────────────────────────────
+window.showToast = function(msg, duration=3500){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),duration);
+};
+
+// ── MODAL ────────────────────────────────────────────────────
+window.openModal  = id => document.getElementById(id).classList.add('open');
+window.closeModal = id => document.getElementById(id).classList.remove('open');
+
+// ── PACKAGES RENDER ──────────────────────────────────────────
+window.renderPackages = async function(){
+  const pkgs = await window._db.getPackages();
+  const grid = document.getElementById('pkgGrid');
+  grid.innerHTML = pkgs.map(p=>`
     <div class="pkg-card${p.featured?' featured':''}">
       ${p.featured?'<div class="pkg-badge">Most Popular</div>':''}
       <div class="pkg-name">${currentLang==='id'?(p.nameId||p.name):p.name}</div>
@@ -962,55 +1102,24 @@ function renderPackages(){
       <button class="btn btn-${p.featured?'primary':'outline'} pkg-btn" onclick="openJoin('${p.id}')">
         ${currentLang==='id'?'Daftar':'Join Now'}
       </button>
-    </div>
-  `).join('');
-  // Also update select in admin
+    </div>`).join('');
+
+  // Update admin select
   const sel=document.getElementById('newPkg');
   if(sel){
-    sel.innerHTML='<option value="">-- Select Package --</option>'+pkgs.map(p=>`<option value="${p.id}">${p.name} – IDR ${formatPrice(p.price)}</option>`).join('');
+    sel.innerHTML='<option value="">-- Select Package --</option>'+
+      pkgs.map(p=>`<option value="${p.id}" data-days="${p.days}" data-price="${p.price}">${p.name} – IDR ${formatPrice(p.price)}</option>`).join('');
   }
-}
+  // Store pkgs in window for quick access
+  window._pkgCache = pkgs;
+};
 
-function formatPrice(n){
-  return Number(n).toLocaleString('id-ID');
-}
-
-// ============================================================
-// JOIN MODAL
-// ============================================================
-let selectedPkgId='';
-function openJoin(pkgId){
-  const pkgs=getPackages();
-  const p=pkgs.find(x=>x.id===pkgId);
-  if(!p)return;
-  selectedPkgId=pkgId;
-  const info=document.getElementById('selectedPkgInfo');
-  info.innerHTML=`<div class="sp-name">${p.name}</div><div class="sp-price">IDR ${formatPrice(p.price)}</div>`;
-  openModal('joinModal');
-}
-function submitJoin(){
-  const name=document.getElementById('joinName').value.trim();
-  const phone=document.getElementById('joinPhone').value.trim();
-  if(!name||!phone){showToast('Please fill in all fields');return;}
-  const pkgs=getPackages();
-  const p=pkgs.find(x=>x.id===selectedPkgId);
-  const msg=`Hello Muscle Beach Club! 👋\n\nI'd like to register for the *${p?p.name:''}* membership.\n\nName: ${name}\nPhone: ${phone}\n\nPlease assist me with the registration.`;
-  window.open(`https://wa.me/6281339156003?text=${encodeURIComponent(msg)}`,'_blank');
-  closeModal('joinModal');
-  showToast('Redirecting to WhatsApp...');
-}
-
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-
-// ============================================================
-// PROMO RENDER
-// ============================================================
-function renderPromos(){
-  const promos=getPromos();
-  const grid=document.getElementById('promoGrid');
+// ── PROMO RENDER ─────────────────────────────────────────────
+window.renderPromos = async function(){
+  const promos = await window._db.getPromos();
+  const grid = document.getElementById('promoGrid');
   if(!promos.length){
-    grid.innerHTML=`<div class="promo-empty"><p data-en="No active promotions at the moment. Check back soon!" data-id="Tidak ada promo aktif saat ini. Pantau terus!">No active promotions at the moment. Check back soon!</p></div>`;
+    grid.innerHTML=`<div class="promo-empty"><p>No active promotions at the moment. Check back soon!</p></div>`;
     return;
   }
   grid.innerHTML=promos.map(pr=>`
@@ -1019,55 +1128,72 @@ function renderPromos(){
       <div class="promo-body">
         ${pr.tag?`<div class="promo-tag">${pr.tag}</div>`:''}
         <div class="promo-title">${pr.title}</div>
-        <div class="promo-desc">${pr.desc}</div>
+        <div class="promo-desc">${pr.desc||''}</div>
       </div>
-    </div>
-  `).join('');
-}
+    </div>`).join('');
+};
 
-// ============================================================
-// LOGIN
-// ============================================================
-function showLogin(){
+// ── JOIN MODAL ───────────────────────────────────────────────
+let selectedPkgId='';
+window.openJoin = function(pkgId){
+  const pkgs = window._pkgCache || DEFAULT_PACKAGES;
+  const p = pkgs.find(x=>x.id===pkgId);
+  if(!p) return;
+  selectedPkgId = pkgId;
+  document.getElementById('selectedPkgInfo').innerHTML=
+    `<div class="sp-name">${p.name}</div><div class="sp-price">IDR ${formatPrice(p.price)}</div>`;
+  openModal('joinModal');
+};
+window.submitJoin = function(){
+  const name  = document.getElementById('joinName').value.trim();
+  const phone = document.getElementById('joinPhone').value.trim();
+  if(!name||!phone){showToast('Please fill in all fields');return;}
+  const pkgs = window._pkgCache || DEFAULT_PACKAGES;
+  const p = pkgs.find(x=>x.id===selectedPkgId);
+  const msg=`Hello Muscle Beach Club! 👋\n\nI'd like to register for the *${p?p.name:''}* membership.\n\nName: ${name}\nPhone: ${phone}\n\nPlease assist me with the registration.`;
+  window.open(`https://wa.me/6281339156003?text=${encodeURIComponent(msg)}`,'_blank');
+  closeModal('joinModal');
+  showToast('Redirecting to WhatsApp…');
+};
+
+// ── LOGIN ─────────────────────────────────────────────────────
+window.showLogin = function(){
   document.getElementById('main-site').style.display='none';
   document.getElementById('login-page').classList.add('active');
   document.getElementById('member-page').classList.remove('active');
   document.getElementById('admin-page').classList.remove('active');
-}
-function backToSite(){
+};
+window.backToSite = function(){
   document.getElementById('main-site').style.display='block';
   document.getElementById('login-page').classList.remove('active');
   document.getElementById('member-page').classList.remove('active');
   document.getElementById('admin-page').classList.remove('active');
-}
-function doLogin(){
-  const code=document.getElementById('loginCode').value.trim();
+};
+window.doLogin = async function(){
+  const code = document.getElementById('loginCode').value.trim();
+  if(!code){showToast('Enter your member code');return;}
   if(code==='#admin0#'){
     document.getElementById('login-page').classList.remove('active');
     document.getElementById('admin-page').classList.add('active');
     renderAdmin();
     return;
   }
-  // Member login
-  const members=getMembers();
-  const normLogin=normCode(code);
-  const m=members.find(x=>normCode(x.code)===normLogin);
+  showLoading('Checking membership…');
+  const m = await window._db.getMemberByCode(code);
+  hideLoading();
   if(!m){showToast('Invalid code. Please try again.');return;}
-  currentUser=m;
+  currentUser = m;
   document.getElementById('login-page').classList.remove('active');
   renderMemberDashboard(m);
   document.getElementById('member-page').classList.add('active');
-}
-function doLogout(){
-  currentUser=null;
-  backToSite();
+};
+window.doLogout = function(){
+  currentUser=null; backToSite();
   document.getElementById('loginCode').value='';
-}
+};
 
-// ============================================================
-// MEMBER DASHBOARD
-// ============================================================
-function renderMemberDashboard(m){
+// ── MEMBER DASHBOARD ─────────────────────────────────────────
+window.renderMemberDashboard = function(m){
   document.getElementById('memberNavName').textContent=m.name;
   document.getElementById('mName').textContent=m.name;
   document.getElementById('mId').textContent=m.code;
@@ -1078,39 +1204,39 @@ function renderMemberDashboard(m){
   document.getElementById('mExpiry').textContent=m.expiryDate;
   const today=new Date(); today.setHours(0,0,0,0);
   const exp=new Date(m.expiryDate);
-  const diff=Math.ceil((exp-today)/(1000*60*60*24));
+  const diff=Math.ceil((exp-today)/(86400000));
   const active=diff>=0;
   document.getElementById('mStatusDot').className='status-dot '+(active?'status-active':'status-expired');
   document.getElementById('mStatusText').textContent=active?'Active':'Expired';
   document.getElementById('mDays').textContent=active?diff+' days':'Expired';
-  // QR
+  // QR Code
   const qrDiv=document.getElementById('qr-container');
   qrDiv.innerHTML='';
   new QRCode(qrDiv,{text:m.code,width:128,height:128,colorDark:'#000',colorLight:'#fff'});
-}
+};
 
-// ============================================================
-// ADMIN
-// ============================================================
-function adminTab(tab){
+// ── ADMIN ─────────────────────────────────────────────────────
+window.adminTab = function(tab){
   ['overview','members','addmember','pricing','promo','scan'].forEach(t=>{
     document.getElementById('admin-'+t).style.display=t===tab?'block':'none';
     document.getElementById('tab-'+t).classList.toggle('active',t===tab);
   });
-  if(tab==='overview')renderOverview();
-  if(tab==='members')renderMembersTable();
-  if(tab==='pricing')renderPricingAdmin();
-  if(tab==='promo')renderPromoAdmin();
-  if(tab==='addmember'){renderPackages();document.getElementById('newStart').value=new Date().toISOString().split('T')[0];}
-  if(tab==='scan'){setTimeout(maybeAutoStartScanner,300);}
-  if(tab!=='scan'){stopScanner();}
-}
-function renderAdmin(){
-  adminTab('overview');
-}
-function renderOverview(){
-  const members=getMembers();
-  const today=new Date();today.setHours(0,0,0,0);
+  if(tab==='overview')   renderOverview();
+  if(tab==='members')    renderMembersTable();
+  if(tab==='pricing')    renderPricingAdmin();
+  if(tab==='promo')      renderPromoAdmin();
+  if(tab==='addmember')  { renderPackages(); document.getElementById('newStart').value=new Date().toISOString().split('T')[0]; }
+  if(tab==='scan')       setTimeout(maybeAutoStartScanner,300);
+  if(tab!=='scan')       stopScanner();
+};
+
+window.renderAdmin = function(){ adminTab('overview'); };
+
+window.renderOverview = async function(){
+  showLoading('Loading dashboard…');
+  const members = await window._db.getMembers();
+  hideLoading();
+  const today=new Date(); today.setHours(0,0,0,0);
   const todayStr=today.toISOString().split('T')[0];
   const active=members.filter(m=>new Date(m.expiryDate)>=today);
   const exp=members.filter(m=>new Date(m.expiryDate)<today);
@@ -1121,127 +1247,157 @@ function renderOverview(){
   document.getElementById('todayExpired').textContent=todayExp.length;
   if(todayExp.length){
     document.getElementById('expiredNotif').style.display='flex';
-    document.getElementById('expiredNotifText').textContent=`${todayExp.length} membership(s) expiring today: ${todayExp.map(m=>m.name).join(', ')}`;
+    document.getElementById('expiredNotifText').textContent=
+      `${todayExp.length} membership(s) expiring today: ${todayExp.map(m=>m.name).join(', ')}`;
+  } else {
+    document.getElementById('expiredNotif').style.display='none';
   }
   const tbody=document.getElementById('overviewTbody');
-  tbody.innerHTML=members.slice(-10).reverse().map(m=>`
-    <tr><td>${m.code}</td><td>${m.name}</td><td>${m.phone}</td><td>${m.pkgName}</td><td>${m.expiryDate}</td>
-    <td><span class="badge ${new Date(m.expiryDate)>=today?'badge-active':'badge-expired'}">${new Date(m.expiryDate)>=today?'Active':'Expired'}</span></td></tr>
-  `).join('');
-}
-function renderMembersTable(){
-  const members=getMembers();
+  tbody.innerHTML=members.slice().reverse().slice(0,10).map(m=>`
+    <tr>
+      <td>${m.code}</td><td>${m.name}</td><td>${m.phone}</td>
+      <td>${m.pkgName}</td><td>${m.expiryDate}</td>
+      <td><span class="badge ${new Date(m.expiryDate)>=today?'badge-active':'badge-expired'}">
+        ${new Date(m.expiryDate)>=today?'Active':'Expired'}</span></td>
+    </tr>`).join('');
+};
+
+window.renderMembersTable = async function(){
+  showLoading('Loading members…');
+  const members = await window._db.getMembers();
+  hideLoading();
   const search=(document.getElementById('searchMember')||{}).value||'';
-  const today=new Date();today.setHours(0,0,0,0);
-  const filtered=members.filter(m=>m.name.toLowerCase().includes(search.toLowerCase())||m.code.includes(search)||m.phone.includes(search));
+  const today=new Date(); today.setHours(0,0,0,0);
+  const filtered=members.filter(m=>
+    m.name.toLowerCase().includes(search.toLowerCase()) ||
+    m.code.includes(search.toUpperCase()) ||
+    (m.phone||'').includes(search));
   document.getElementById('membersTbody').innerHTML=filtered.map(m=>`
     <tr>
       <td><small>${m.code}</small></td>
       <td>${m.name}</td><td>${m.phone}</td><td>${m.pkgName}</td>
       <td>${m.startDate}</td><td>${m.expiryDate}</td>
-      <td><span class="badge ${new Date(m.expiryDate)>=today?'badge-active':'badge-expired'}">${new Date(m.expiryDate)>=today?'Active':'Expired'}</span></td>
+      <td><span class="badge ${new Date(m.expiryDate)>=today?'badge-active':'badge-expired'}">
+        ${new Date(m.expiryDate)>=today?'Active':'Expired'}</span></td>
       <td>${m.discount||0}%</td>
       <td>
         <button class="action-btn" onclick="extendMember('${m.code}')">Extend</button>
         <button class="action-btn" onclick="editDiscount('${m.code}')">Discount</button>
         <button class="action-btn danger" onclick="deleteMember('${m.code}')">Delete</button>
       </td>
-    </tr>
-  `).join('');
-}
-function renderPricingAdmin(){
-  const pkgs=getPackages();
+    </tr>`).join('');
+};
+
+window.renderPricingAdmin = async function(){
+  const pkgs = await window._db.getPackages();
   document.getElementById('pricingTbody').innerHTML=pkgs.map(p=>`
     <tr>
       <td>${p.name}</td>
       <td>${p.days} day(s)</td>
       <td><input class="price-input" type="number" id="price-${p.id}" value="${p.price}"></td>
       <td><input class="price-input" style="width:180px;" type="text" id="promo-${p.id}" value="${p.promo||''}"></td>
-    </tr>
-  `).join('');
-}
-function savePricing(){
-  const pkgs=getPackages();
+    </tr>`).join('');
+};
+
+window.savePricing = async function(){
+  showLoading('Saving prices…');
+  const pkgs = await window._db.getPackages();
   pkgs.forEach(p=>{
     const inp=document.getElementById('price-'+p.id);
-    const pr=document.getElementById('promo-'+p.id);
-    if(inp)p.price=Number(inp.value);
-    if(pr)p.promo=pr.value;
+    const pr =document.getElementById('promo-'+p.id);
+    if(inp) p.price=Number(inp.value);
+    if(pr)  p.promo=pr.value;
   });
-  savePackages(pkgs);
-  renderPackages();
-  showToast('Prices updated!');
-}
-function renderPromoAdmin(){
-  const promos=getPromos();
+  await window._db.savePackages(pkgs);
+  hideLoading();
+  await renderPackages();
+  showToast('Prices updated & synced! ✓');
+};
+
+window.renderPromoAdmin = async function(){
+  const promos = await window._db.getPromos();
   const list=document.getElementById('adminPromoList');
-  if(!promos.length){list.innerHTML='<p style="font-size:13px;color:var(--gray);padding:1rem;">No promos yet.</p>';return;}
-  list.innerHTML=promos.map((pr,i)=>`
+  if(!promos.length){
+    list.innerHTML='<p style="font-size:13px;color:var(--gray);padding:1rem;">No promos yet.</p>';
+    return;
+  }
+  list.innerHTML=promos.map(pr=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;border-bottom:1px solid var(--border);">
-      <div><strong style="font-family:var(--font-cond);">${pr.title}</strong><br><small style="color:var(--gray);">${pr.desc.substring(0,60)}...</small></div>
-      <button class="action-btn danger" onclick="deletePromo(${i})">Delete</button>
-    </div>
-  `).join('');
-}
-function addPromo(){
-  const title=document.getElementById('promoTitle').value.trim();
-  const desc=document.getElementById('promoDesc').value.trim();
-  const img=document.getElementById('promoImg').value.trim();
-  const tag=document.getElementById('promoTag').value.trim();
+      <div>
+        <strong style="font-family:var(--font-cond);">${pr.title}</strong><br>
+        <small style="color:var(--gray);">${(pr.desc||'').substring(0,60)}…</small>
+      </div>
+      <button class="action-btn danger" onclick="deletePromo('${pr._id}')">Delete</button>
+    </div>`).join('');
+};
+
+window.addPromo = async function(){
+  const title = document.getElementById('promoTitle').value.trim();
+  const desc  = document.getElementById('promoDesc').value.trim();
+  const img   = document.getElementById('promoImg').value.trim();
+  const tag   = document.getElementById('promoTag').value.trim();
   if(!title){showToast('Please enter a title');return;}
-  const promos=getPromos();
-  promos.push({title,desc,img,tag});
-  savePromos(promos);
-  renderPromos();
-  renderPromoAdmin();
+  showLoading('Publishing promo…');
+  await window._db.addPromoDB({title,desc,img,tag});
+  hideLoading();
+  await renderPromos();
+  await renderPromoAdmin();
   document.getElementById('promoTitle').value='';
   document.getElementById('promoDesc').value='';
   document.getElementById('promoImg').value='';
   document.getElementById('promoTag').value='';
-  showToast('Promo published!');
-}
-function deletePromo(i){
-  const p=getPromos();p.splice(i,1);savePromos(p);renderPromoAdmin();renderPromos();
-}
+  showToast('Promo published & live! ✓');
+};
 
-// ============================================================
-// MEMBER CRUD
-// ============================================================
+window.deletePromo = async function(id){
+  if(!confirm('Delete this promo?')) return;
+  showLoading('Deleting…');
+  await window._db.deletePromoDB(id);
+  hideLoading();
+  await renderPromos();
+  await renderPromoAdmin();
+  showToast('Promo deleted');
+};
+
+// ── MEMBER CRUD ───────────────────────────────────────────────
 function generateCode(){
   const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code='MBC-'+new Date().getFullYear()+'-';
-  for(let i=0;i<6;i++)code+=chars[Math.floor(Math.random()*chars.length)];
+  for(let i=0;i<6;i++) code+=chars[Math.floor(Math.random()*chars.length)];
   return code;
 }
-function updateNewPrice(){
-  const pkgId=document.getElementById('newPkg').value;
-  const pkgs=getPackages();
-  const p=pkgs.find(x=>x.id===pkgId);
-  document.getElementById('newPriceDisplay').textContent=p?'IDR '+formatPrice(p.price):'–';
-}
-function registerMember(){
-  const name=document.getElementById('newName').value.trim();
-  const phone=document.getElementById('newPhone').value.trim();
-  const pkgId=document.getElementById('newPkg').value;
-  const startDate=document.getElementById('newStart').value;
-  const discount=Number(document.getElementById('newDiscount').value)||0;
+
+window.updateNewPrice = function(){
+  const sel=document.getElementById('newPkg');
+  const opt=sel.options[sel.selectedIndex];
+  const price=opt?opt.getAttribute('data-price'):'';
+  document.getElementById('newPriceDisplay').textContent=price?'IDR '+formatPrice(price):'–';
+};
+
+window.registerMember = async function(){
+  const name     = document.getElementById('newName').value.trim();
+  const phone    = document.getElementById('newPhone').value.trim();
+  const pkgId    = document.getElementById('newPkg').value;
+  const startDate= document.getElementById('newStart').value;
+  const discount = Number(document.getElementById('newDiscount').value)||0;
   if(!name||!phone||!pkgId||!startDate){showToast('Fill all required fields');return;}
-  const pkgs=getPackages();
-  const p=pkgs.find(x=>x.id===pkgId);
-  const code=generateCode();
-  const start=new Date(startDate);
-  const expiry=new Date(start);
+  showLoading('Registering member…');
+  const pkgs = await window._db.getPackages();
+  const p    = pkgs.find(x=>x.id===pkgId);
+  const code = generateCode();
+  const start  = new Date(startDate);
+  const expiry = new Date(start);
   expiry.setDate(expiry.getDate()+p.days);
-  const discountedPrice=Math.round(p.price*(1-discount/100));
-  const member={
-    code,name,phone,pkgId,pkgName:p.name,
-    startDate:start.toISOString().split('T')[0],
-    expiryDate:expiry.toISOString().split('T')[0],
-    discount,price:discountedPrice
+  const discountedPrice = Math.round(p.price*(1-discount/100));
+  const member = {
+    code, name, phone, pkgId, pkgName: p.name,
+    startDate:  start.toISOString().split('T')[0],
+    expiryDate: expiry.toISOString().split('T')[0],
+    discount, price: discountedPrice,
+    registeredAt: new Date().toISOString()
   };
-  const members=getMembers();
-  members.push(member);
-  saveMembers(members);
+  await window._db.saveMember(member);
+  hideLoading();
   // Show result
   document.getElementById('newMemberResult').style.display='block';
   document.getElementById('genCode').textContent=code;
@@ -1251,129 +1407,150 @@ function registerMember(){
     Package: <strong style="color:var(--white)">${p.name}</strong><br>
     Price: <strong style="color:var(--blue)">IDR ${formatPrice(discountedPrice)}</strong>${discount?` (${discount}% off)`:''}<br>
     Start: <strong style="color:var(--white)">${member.startDate}</strong><br>
-    Expiry: <strong style="color:var(--white)">${member.expiryDate}</strong>
-  `;
+    Expiry: <strong style="color:var(--white)">${member.expiryDate}</strong>`;
   const qrDiv=document.getElementById('genQR');
   qrDiv.innerHTML='';
   new QRCode(qrDiv,{text:code,width:128,height:128});
-  showToast('Member registered: '+code);
+  showToast('Member registered & synced: '+code);
+  // Clear form
+  document.getElementById('newName').value='';
+  document.getElementById('newPhone').value='';
+  document.getElementById('newPkg').value='';
+  document.getElementById('newDiscount').value='0';
+  document.getElementById('newPriceDisplay').textContent='–';
+  document.getElementById('newStart').value=new Date().toISOString().split('T')[0];
   renderOverview();
-}
-function extendMember(code){
+};
+
+window.extendMember = async function(code){
   const pkgId=prompt('Enter package ID to extend\n(daily/2days/weekly/monthly/3months/6months/annual):');
-  if(!pkgId)return;
-  const pkgs=getPackages();
-  const p=pkgs.find(x=>x.id===pkgId.trim());
-  if(!p){showToast('Invalid package ID');return;}
-  const members=getMembers();
-  const m=members.find(x=>x.code===code);
-  if(!m)return;
-  const today=new Date();today.setHours(0,0,0,0);
+  if(!pkgId) return;
+  showLoading('Extending membership…');
+  const pkgs = await window._db.getPackages();
+  const p = pkgs.find(x=>x.id===pkgId.trim());
+  if(!p){hideLoading();showToast('Invalid package ID');return;}
+  const m = await window._db.getMemberByCode(code);
+  if(!m){hideLoading();return;}
+  const today=new Date(); today.setHours(0,0,0,0);
   const base=new Date(m.expiryDate)>=today?new Date(m.expiryDate):today;
   base.setDate(base.getDate()+p.days);
-  m.expiryDate=base.toISOString().split('T')[0];
-  m.pkgName=p.name;
-  saveMembers(members);
+  const newExpiry=base.toISOString().split('T')[0];
+  await window._db.updateMember(code,{expiryDate:newExpiry,pkgName:p.name});
+  hideLoading();
   renderMembersTable();
-  showToast('Extended to '+m.expiryDate);
-}
-function editDiscount(code){
-  const d=prompt('Enter discount %:');
-  if(d===null)return;
-  const members=getMembers();
-  const m=members.find(x=>x.code===code);
-  if(m){m.discount=Number(d);saveMembers(members);renderMembersTable();showToast('Discount updated');}
-}
-function deleteMember(code){
-  if(!confirm('Delete member '+code+'?'))return;
-  const members=getMembers().filter(m=>m.code!==code);
-  saveMembers(members);
+  showToast('Extended to '+newExpiry+' ✓');
+};
+
+window.editDiscount = async function(code){
+  const d=prompt('Enter new discount %:');
+  if(d===null) return;
+  showLoading('Updating discount…');
+  await window._db.updateMember(code,{discount:Number(d)});
+  hideLoading();
+  renderMembersTable();
+  showToast('Discount updated ✓');
+};
+
+window.deleteMember = async function(code){
+  if(!confirm('Delete member '+code+'? This cannot be undone.')) return;
+  showLoading('Deleting member…');
+  await window._db.deleteMemberFromDB(code);
+  hideLoading();
   renderMembersTable();
   renderOverview();
   showToast('Member deleted');
-}
-function normCode(raw){
-  // Accept codes with/without dashes, extra spaces, lowercase
-  return (raw||'').trim().toUpperCase().replace(/\s+/g,'');
-}
-function scanMember(){
-  const raw=document.getElementById('scanCode').value;
-  const code=normCode(raw);
-  const members=getMembers();
-  // Try exact match first, then normalised match
-  const m=members.find(x=>x.code===code)||members.find(x=>normCode(x.code)===code);
-  const res=document.getElementById('scanResult');
-  if(!m){res.innerHTML=`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);padding:1rem;font-size:13px;color:#ef4444;">Member not found: ${code}</div>`;return;}
-  const today=new Date();today.setHours(0,0,0,0);
-  const active=new Date(m.expiryDate)>=today;
-  const diff=Math.ceil((new Date(m.expiryDate)-today)/(1000*60*60*24));
-  res.innerHTML=`
-    <div style="background:${active?'rgba(34,197,94,.08)':'rgba(239,68,68,.08)'};border:1px solid ${active?'rgba(34,197,94,.2)':'rgba(239,68,68,.2)'};padding:1.5rem;">
-      <div style="font-family:var(--font-head);font-size:28px;margin-bottom:.5rem;">${m.name}</div>
-      <div style="font-size:13px;line-height:2;color:var(--gray);">
-        Code: <span style="color:var(--white)">${m.code}</span><br>
-        Package: <span style="color:var(--white)">${m.pkgName}</span><br>
-        Expiry: <span style="color:var(--white)">${m.expiryDate}</span><br>
-        Status: <span style="color:${active?'#22c55e':'#ef4444'};font-weight:700;">${active?'✓ ACTIVE ('+diff+' days left)':'✗ EXPIRED'}</span>
-      </div>
-    </div>
-  `;
-}
-function exportMembers(){
-  const members=getMembers();
-  const header='Code,Name,Phone,Package,Start,Expiry,Discount\n';
-  const rows=members.map(m=>`${m.code},${m.name},${m.phone},${m.pkgName},${m.startDate},${m.expiryDate},${m.discount||0}%`).join('\n');
+};
+
+window.exportMembers = async function(){
+  showLoading('Preparing export…');
+  const members = await window._db.getMembers();
+  hideLoading();
+  const header='Code,Name,Phone,Package,Start,Expiry,Discount,Price\n';
+  const rows=members.map(m=>`${m.code},${m.name},${m.phone||''},${m.pkgName},${m.startDate},${m.expiryDate},${m.discount||0}%,${m.price||''}`).join('\n');
   const blob=new Blob([header+rows],{type:'text/csv'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download='mbc-members-'+new Date().toISOString().split('T')[0]+'.csv';
+  a.download=`MBC_Members_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
-}
+  showToast('CSV exported ✓');
+};
 
-// ============================================================
-// AI CHATBOX
-// ============================================================
-function toggleChat(){
-  document.getElementById('chatbox').classList.toggle('open');
-}
+// ── SCAN MEMBER ───────────────────────────────────────────────
+window.scanMember = async function(){
+  const raw=(document.getElementById('scanCode').value||'').trim().toUpperCase();
+  if(!raw){showToast('Enter a member code');return;}
+  showLoading('Looking up member…');
+  const m = await window._db.getMemberByCode(raw);
+  hideLoading();
+  const resultDiv=document.getElementById('scanResult');
+  if(!m){
+    resultDiv.innerHTML=`
+      <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);padding:1.5rem;">
+        <p style="color:#ef4444;font-family:var(--font-cond);font-size:14px;letter-spacing:1px;">❌ MEMBER NOT FOUND</p>
+        <p style="font-size:13px;color:var(--gray);margin-top:.5rem;">Code "${raw}" is not registered.</p>
+      </div>`;
+    if(navigator.vibrate) navigator.vibrate([200]);
+    return;
+  }
+  const today=new Date(); today.setHours(0,0,0,0);
+  const exp=new Date(m.expiryDate);
+  const diff=Math.ceil((exp-today)/86400000);
+  const active=diff>=0;
+  const color=active?'#22c55e':'#ef4444';
+  const statusText=active?`✅ ACTIVE — ${diff} day(s) remaining`:'❌ EXPIRED';
+  resultDiv.innerHTML=`
+    <div style="border:2px solid ${color};padding:1.5rem;background:${active?'rgba(34,197,94,.06)':'rgba(239,68,68,.06)'};">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+        <div>
+          <div style="font-family:var(--font-head);font-size:28px;">${m.name}</div>
+          <div style="font-family:var(--font-cond);font-size:13px;color:var(--gray);margin-top:.25rem;">${m.code}</div>
+        </div>
+        <div style="font-family:var(--font-cond);font-size:13px;letter-spacing:1px;color:${color};text-align:right;">${statusText}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1.25rem;">
+        <div><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);font-family:var(--font-cond);">Package</div><div style="font-size:15px;margin-top:.2rem;">${m.pkgName}</div></div>
+        <div><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);font-family:var(--font-cond);">Start</div><div style="font-size:15px;margin-top:.2rem;">${m.startDate}</div></div>
+        <div><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);font-family:var(--font-cond);">Expiry</div><div style="font-size:15px;margin-top:.2rem;color:${color};">${m.expiryDate}</div></div>
+      </div>
+    </div>`;
+  if(navigator.vibrate) navigator.vibrate(active?[100]:([200,100,200]));
+};
+
+// ── CHATBOX ───────────────────────────────────────────────────
 const chatKB={
-  facilities:['infrared sauna','ice bath','boxing room','pole dance studio','indoor gym','outdoor crossfit','swimming pool','fitbar & protein bar'],
-  packages:'Daily: IDR 220K | 2 Days: IDR 500K (1 free day) | Weekly: IDR 850K (3 free days) | 1 Month: IDR 1.2M | 3 Months: IDR 3.05M | 6 Months: IDR 5.76M | 12 Months: IDR 10M',
-  services:'Personal Trainer (ask for rates) | Pole Dance Class: IDR 375K/class/person | Pole Self Practice: IDR 300K/hr | Rent Studio: IDR 250K/hr | Rent Boxing Room: IDR 75K/pax',
-  location:'Uluwatu, Bali, Indonesia. Open via Google Maps: https://maps.app.goo.gl/broyoXYcedrw6FoWA',
+  facilities:'Infrared Sauna, Ice Bath, Boxing Room, Pole Dance Studio, Indoor Gym, Outdoor CrossFit, Swimming Pool, Fitbar & Protein Bar',
+  packages:'Daily (IDR 220K), 2 Days (IDR 500K), Weekly (IDR 850K), 1 Month (IDR 1.2M), 3 Months (IDR 3.05M), 6 Months (IDR 5.76M), 12 Months (IDR 10M)',
+  services:'Personal Trainer, Pole Dance Class (375K/class), Pole Self Practice (300K/hr), Studio Rental (250K/hr), Boxing Room (75K/pax)',
+  location:'Jl. Raya Uluwatu, Pecatu, Kuta Selatan, Badung, Bali 80361',
   contact:'WhatsApp: +62 813-3915-6003 | Instagram: @musclebeachclub',
-  hours:'Please contact us on WhatsApp for current operating hours.',
+  hours:'Open daily — contact us for exact schedule'
 };
 function getAIReply(msg){
   const m=msg.toLowerCase();
-  if(m.includes('facility')||m.includes('facilities')||m.includes('fasilitas'))
-    return '🏋️ Our facilities include: '+chatKB.facilities.join(', ');
-  if(m.includes('package')||m.includes('price')||m.includes('paket')||m.includes('harga')||m.includes('cost'))
-    return '💳 Our packages:\n'+chatKB.packages;
-  if(m.includes('service')||m.includes('layanan')||m.includes('class')||m.includes('kelas'))
+  if(m.includes('facility')||m.includes('fasilitas')||m.includes('sauna')||m.includes('pool')||m.includes('gym'))
+    return '🏋️ Our facilities:\n'+chatKB.facilities;
+  if(m.includes('price')||m.includes('harga')||m.includes('package')||m.includes('paket')||m.includes('cost'))
+    return '💰 Our packages:\n'+chatKB.packages;
+  if(m.includes('service')||m.includes('layanan'))
     return '🎯 Our services:\n'+chatKB.services;
   if(m.includes('location')||m.includes('where')||m.includes('address')||m.includes('lokasi')||m.includes('alamat'))
-    return '📍 We are located in '+chatKB.location;
+    return '📍 '+chatKB.location;
   if(m.includes('contact')||m.includes('whatsapp')||m.includes('wa')||m.includes('kontak'))
-    return '📱 Contact us:\n'+chatKB.contact;
+    return '📱 '+chatKB.contact;
   if(m.includes('hour')||m.includes('open')||m.includes('jam')||m.includes('buka'))
     return '🕐 '+chatKB.hours;
   if(m.includes('join')||m.includes('member')||m.includes('register')||m.includes('daftar'))
-    return '💪 To join, click the "Join Now" button above and pick a package! You can also contact us on WhatsApp at +62 813-3915-6003.';
-  if(m.includes('sauna'))
-    return '🔥 We have an Infrared Sauna — great for deep tissue recovery and relaxation after training!';
+    return '💪 Click "Join Now" and pick a package! Or WhatsApp us at +62 813-3915-6003.';
   if(m.includes('ice bath')||m.includes('cold'))
-    return '🧊 Yes! We have an Ice Bath for cold water therapy — helps reduce inflammation and speed up recovery.';
-  if(m.includes('pool')||m.includes('swim')||m.includes('kolam'))
-    return '🏊 Yes, we have a Swimming Pool available for members!';
+    return '🧊 Yes! Ice Bath available for cold water therapy — reduces inflammation and speeds up recovery.';
   if(m.includes('pole')||m.includes('dance'))
-    return '💃 We offer Pole Dance Classes (IDR 375K/class) and Pole Self Practice (IDR 300K/hr). Studio rental also available!';
-  return "That's a great question! For detailed info, please contact us on WhatsApp at +62 813-3915-6003 or visit us in Uluwatu, Bali. We're happy to help! 🌴";
+    return '💃 Pole Dance Class: IDR 375K/class. Self Practice: IDR 300K/hr. Studio also rentable!';
+  return "Great question! For detailed info, contact us on WhatsApp at +62 813-3915-6003 or visit us in Uluwatu, Bali. 🌴";
 }
-function sendChat(){
+window.sendChat = function(){
   const input=document.getElementById('chatInput');
   const msg=input.value.trim();
-  if(!msg)return;
+  if(!msg) return;
   const msgs=document.getElementById('chatMessages');
   msgs.innerHTML+=`<div class="chat-msg user">${msg}</div>`;
   input.value='';
@@ -1383,120 +1560,81 @@ function sendChat(){
     msgs.scrollTop=msgs.scrollHeight;
   },600);
   msgs.scrollTop=msgs.scrollHeight;
-}
+};
+window.toggleChat = function(){
+  document.getElementById('chatbox').classList.toggle('open');
+};
 
-// ============================================================
-// CAMERA QR SCANNER
-// ============================================================
-let scanStream = null;
-let scanAnimFrame = null;
-let useFrontCam = false;
-let lastScanned = '';
-let lastScannedTime = 0;
+// ── CAMERA SCANNER ────────────────────────────────────────────
+let scanStream=null, scanAnimFrame=null, useFrontCam=false, lastScanned='', lastScannedTime=0;
 
-async function startScanner() {
-  const wrap = document.getElementById('scannerWrap');
-  const video = document.getElementById('scanVideo');
-  const startBtn = document.getElementById('startScanBtn');
-  const stopBtn = document.getElementById('stopScanBtn');
-  const flipBtn = document.getElementById('flipCamBtn');
-  const notice = document.getElementById('noCameraNotice');
-
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    notice.style.display = 'block';
-    return;
-  }
-  try {
-    if (scanStream) stopScanner();
-    const constraints = {
-      video: {
-        facingMode: useFrontCam ? 'user' : { ideal: 'environment' },
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      }
-    };
-    scanStream = await navigator.mediaDevices.getUserMedia(constraints);
-    video.srcObject = scanStream;
+window.startScanner = async function(){
+  const wrap=document.getElementById('scannerWrap');
+  const video=document.getElementById('scanVideo');
+  const startBtn=document.getElementById('startScanBtn');
+  const stopBtn=document.getElementById('stopScanBtn');
+  const flipBtn=document.getElementById('flipCamBtn');
+  const notice=document.getElementById('noCameraNotice');
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){notice.style.display='block';return;}
+  try{
+    if(scanStream) stopScanner();
+    scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:useFrontCam?'user':{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
+    video.srcObject=scanStream;
     await video.play();
-    wrap.style.display = 'block';
-    notice.style.display = 'none';
-    startBtn.style.display = 'none';
-    stopBtn.style.display = 'inline-flex';
-    flipBtn.style.display = 'inline-flex';
+    wrap.style.display='block'; notice.style.display='none';
+    startBtn.style.display='none'; stopBtn.style.display='inline-flex'; flipBtn.style.display='inline-flex';
     tickScanner();
-  } catch (e) {
-    notice.style.display = 'block';
-    console.warn('Camera error:', e);
-  }
-}
-
-function stopScanner() {
-  if (scanStream) {
-    scanStream.getTracks().forEach(t => t.stop());
-    scanStream = null;
-  }
-  if (scanAnimFrame) { cancelAnimationFrame(scanAnimFrame); scanAnimFrame = null; }
-  document.getElementById('scannerWrap').style.display = 'none';
-  document.getElementById('startScanBtn').style.display = 'inline-flex';
-  document.getElementById('stopScanBtn').style.display = 'none';
-  document.getElementById('flipCamBtn').style.display = 'none';
-}
-
-function flipCamera() {
-  useFrontCam = !useFrontCam;
-  startScanner();
-}
-
-function tickScanner() {
-  const video = document.getElementById('scanVideo');
-  const canvas = document.getElementById('scanCanvas');
-  if (!scanStream || video.readyState !== video.HAVE_ENOUGH_DATA) {
-    scanAnimFrame = requestAnimationFrame(tickScanner);
-    return;
-  }
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
-  if (code && code.data) {
-    const now = Date.now();
-    // debounce: same code not re-processed within 3s
-    if (code.data !== lastScanned || now - lastScannedTime > 3000) {
-      lastScanned = code.data;
-      lastScannedTime = now;
-      onCodeScanned(code.data);
+  } catch(e){ notice.style.display='block'; console.warn('Camera error:',e); }
+};
+window.stopScanner = function(){
+  if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}
+  if(scanAnimFrame){cancelAnimationFrame(scanAnimFrame);scanAnimFrame=null;}
+  const w=document.getElementById('scannerWrap');
+  const s=document.getElementById('startScanBtn');
+  const st=document.getElementById('stopScanBtn');
+  const f=document.getElementById('flipCamBtn');
+  if(w)w.style.display='none';
+  if(s)s.style.display='inline-flex';
+  if(st)st.style.display='none';
+  if(f)f.style.display='none';
+};
+window.flipCamera = function(){ useFrontCam=!useFrontCam; startScanner(); };
+function tickScanner(){
+  const video=document.getElementById('scanVideo');
+  const canvas=document.getElementById('scanCanvas');
+  if(!scanStream||video.readyState!==video.HAVE_ENOUGH_DATA){scanAnimFrame=requestAnimationFrame(tickScanner);return;}
+  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(video,0,0,canvas.width,canvas.height);
+  const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+  const code=jsQR(imageData.data,imageData.width,imageData.height,{inversionAttempts:'dontInvert'});
+  if(code&&code.data){
+    const now=Date.now();
+    if(code.data!==lastScanned||now-lastScannedTime>3000){
+      lastScanned=code.data; lastScannedTime=now; onCodeScanned(code.data);
     }
   }
-  scanAnimFrame = requestAnimationFrame(tickScanner);
+  scanAnimFrame=requestAnimationFrame(tickScanner);
 }
-
-function onCodeScanned(raw) {
-  const code = normCode(raw);
-  const inp = document.getElementById('scanCode');
-  inp.value = code;
-  document.getElementById('scanStatus').textContent = '\u2713 Code detected: ' + code;
-  document.getElementById('scanStatus').style.color = '#22c55e';
-  setTimeout(() => {
-    if(document.getElementById('scanStatus')){
-      document.getElementById('scanStatus').textContent = 'Scanning\u2026 point camera at QR code';
-      document.getElementById('scanStatus').style.color = 'var(--blue)';
-    }
-  }, 2500);
-  // Slight delay so input value is committed before lookup
-  setTimeout(scanMember, 50);
-  if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+function onCodeScanned(raw){
+  const code=normCode(raw);
+  const inp=document.getElementById('scanCode');
+  inp.value=code;
+  document.getElementById('scanStatus').textContent='✓ Code detected: '+code;
+  document.getElementById('scanStatus').style.color='#22c55e';
+  setTimeout(()=>{
+    const s=document.getElementById('scanStatus');
+    if(s){s.textContent='Scanning… point camera at QR code';s.style.color='var(--blue)';}
+  },2500);
+  setTimeout(scanMember,50);
+  if(navigator.vibrate) navigator.vibrate([100,50,100]);
 }
+window.maybeAutoStartScanner = function(){
+  if(/iPhone|iPad|Android/i.test(navigator.userAgent)) startScanner();
+};
 
-// Auto-start scanner when tab is opened on mobile
-function maybeAutoStartScanner() {
-  const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-  if (isMobile) startScanner();
-}
-
-// ============================================================
-function toggleMobileNav(){
+// ── MOBILE NAV ────────────────────────────────────────────────
+window.toggleMobileNav = function(){
   const nav=document.getElementById('navLinks');
   nav.style.display=nav.style.display==='flex'?'none':'flex';
   nav.style.flexDirection='column';
@@ -1507,34 +1645,21 @@ function toggleMobileNav(){
   nav.style.background='var(--dark)';
   nav.style.padding='1rem 2rem';
   nav.style.borderBottom='1px solid var(--border)';
-}
+};
 
-// ============================================================
-// TOAST
-// ============================================================
-function showToast(msg,duration=3000){
-  const t=document.getElementById('toast');
-  t.textContent=msg;
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),duration);
-}
-
-// ============================================================
-// INIT
-// ============================================================
-document.addEventListener('DOMContentLoaded',()=>{
+// ── INIT ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async ()=>{
   initHero();
-  renderPackages();
-  renderPromos();
-  // Default today for admin add member
+  await renderPackages();
+  await renderPromos();
   const ns=document.getElementById('newStart');
-  if(ns)ns.value=new Date().toISOString().split('T')[0];
+  if(ns) ns.value=new Date().toISOString().split('T')[0];
+  // Close modal on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(el=>{
+    el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('open'); });
+  });
 });
 
-// Close modal on overlay click
-document.querySelectorAll('.modal-overlay').forEach(el=>{
-  el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');});
-});
 </script>
 </body>
 </html>
