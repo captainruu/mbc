@@ -136,7 +136,8 @@ section{padding:6rem 0;}
 /* PROMO */
 #promo{background:var(--dark);}
 .promo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem;}
-.promo-card{background:var(--dark2);border:1px solid var(--border);overflow:hidden;}
+.promo-card{background:var(--dark2);border:1px solid var(--border);overflow:hidden;cursor:pointer;transition:transform .2s,border-color .2s;}
+.promo-card:hover{transform:translateY(-4px);border-color:var(--blue3);}
 .promo-img{height:200px;object-fit:cover;width:100%;filter:brightness(.7);}
 .promo-body{padding:1.25rem;}
 .promo-tag{font-family:var(--font-cond);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:.4rem;}
@@ -329,6 +330,18 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:3rem 0 
   .admin-page-title{font-size:26px;}
   .admin-table td,.admin-table th{padding:.5rem .6rem;font-size:12px;}
 }
+
+
+/* STACKED DISCOUNT */
+.discount-stack{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem;}
+.discount-row{display:flex;align-items:center;gap:.5rem;}
+.discount-row input{width:70px;background:var(--dark3);border:1px solid var(--border);color:var(--white);padding:.4rem .6rem;font-size:13px;outline:none;text-align:center;}
+.discount-row .disc-label{font-size:12px;color:var(--gray);font-family:var(--font-cond);letter-spacing:1px;min-width:60px;}
+.discount-row .disc-result{font-size:13px;color:var(--blue);font-family:var(--font-cond);min-width:100px;}
+.btn-add-disc{background:transparent;border:1px dashed var(--border);color:var(--gray);padding:.3rem .8rem;font-size:11px;font-family:var(--font-cond);letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+.btn-add-disc:hover{border-color:var(--blue);color:var(--blue);}
+.btn-rm-disc{background:none;border:none;color:var(--gray2);font-size:14px;cursor:pointer;padding:0 .25rem;line-height:1;}
+.btn-rm-disc:hover{color:#ef4444;}
 
 /* MAIN SITE VISIBILITY */
 #main-site{display:block;}
@@ -741,7 +754,21 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:3rem 0 
           <div class="form-group"><label>Phone Number</label><input type="text" id="newPhone" placeholder="+62..."></div>
           <div class="form-group"><label>Package</label><select id="newPkg" onchange="updateNewPrice()"><option value="">-- Select Package --</option></select></div>
           <div class="form-group"><label>Start Date</label><input type="date" id="newStart"></div>
-          <div class="form-group"><label>Special Discount (%)</label><input type="number" id="newDiscount" placeholder="0" min="0" max="100" value="0"></div>
+          <div class="form-group">
+  <label>Stacked Discount</label>
+  <div class="discount-stack" id="discountStack">
+    <div class="discount-row" id="discRow0">
+      <span class="disc-label">Tier 1</span>
+      <input type="number" class="disc-input" id="disc0" placeholder="0" min="0" max="100" value="0" oninput="recalcDiscount()">
+      <span style="font-size:12px;color:var(--gray);">%</span>
+      <span class="disc-result" id="discResult0"></span>
+    </div>
+  </div>
+  <div style="display:flex;gap:.5rem;margin-top:.5rem;">
+    <button type="button" class="btn-add-disc" onclick="addDiscountTier()">+ Add Tier</button>
+    <span style="font-size:12px;color:var(--gray);align-self:center;" id="discTotal"></span>
+  </div>
+</div>
           <div style="background:var(--dark3);border:1px solid var(--border);padding:1rem;margin-bottom:1.5rem;">
             <div style="font-family:var(--font-cond);font-size:13px;color:var(--gray);margin-bottom:.3rem;">Price</div>
             <div style="font-family:var(--font-head);font-size:28px;color:var(--blue);" id="newPriceDisplay">–</div>
@@ -1301,8 +1328,8 @@ async function renderPromos(){
   const grid=document.getElementById('promoGrid');
   if(!grid) return;
   if(!promos.length){ grid.innerHTML='<div class="promo-empty"><p>No active promotions at the moment. Check back soon!</p></div>'; return; }
-  grid.innerHTML=promos.map(pr=>`
-    <div class="promo-card">
+  grid.innerHTML=promos.map((pr,i)=>`
+    <div class="promo-card" onclick="openPromoPopup(${i})">
       ${pr.img?`<img class="promo-img" src="${pr.img}" alt="${pr.title}" onerror="this.style.display='none'">`:''}
       <div class="promo-body">
         ${pr.tag?`<div class="promo-tag">${pr.tag}</div>`:''}
@@ -1310,7 +1337,26 @@ async function renderPromos(){
         <div class="promo-desc">${pr.desc||''}</div>
       </div>
     </div>`).join('');
+  window._promoData = promos;
 }
+
+function openPromoPopup(idx){
+  const pr = (window._promoData||[])[idx];
+  if(!pr) return;
+  const modal = document.getElementById('promoPopupModal');
+  const img   = document.getElementById('promoPopupImg');
+  const tag   = document.getElementById('promoPopupTag');
+  const title = document.getElementById('promoPopupTitle');
+  const desc  = document.getElementById('promoPopupDesc');
+  if(pr.img){ img.src=pr.img; img.style.display='block'; }
+  else { img.style.display='none'; }
+  if(pr.tag){ tag.textContent=pr.tag; tag.style.display='block'; }
+  else { tag.style.display='none'; }
+  title.textContent = pr.title || '';
+  desc.textContent  = pr.desc  || '';
+  modal.style.display='flex';
+}
+window.openPromoPopup=openPromoPopup;
 window.renderPromos=renderPromos;
 
 // ============================================================
@@ -1806,11 +1852,73 @@ function generateCode(){
   for(let i=0;i<6;i++) code+=chars[Math.floor(Math.random()*chars.length)];
   return code;
 }
+// ── STACKED DISCOUNT HELPERS ──────────────────────────────
+let _discTierCount = 1;
+function recalcDiscount(){
+  const pkgId = document.getElementById('newPkg').value;
+  const pkgs_el = document.getElementById('newPriceDisplay');
+  // get base price from display
+  const rows = document.querySelectorAll('.disc-input');
+  let baseText = (pkgs_el ? pkgs_el.getAttribute('data-base') : null);
+  let base = baseText ? Number(baseText) : 0;
+  if(!base) return;
+  let price = base;
+  rows.forEach((inp,i)=>{
+    const d = Math.min(100,Math.max(0,Number(inp.value)||0));
+    price = Math.round(price*(1-d/100));
+    const res = document.getElementById('discResult'+i);
+    if(res) res.textContent = d>0 ? '→ IDR '+formatPrice(price) : '';
+  });
+  const eff = base ? Math.round((1-price/base)*1000)/10 : 0;
+  const tot = document.getElementById('discTotal');
+  if(tot) tot.textContent = base>0 ? `Final: IDR ${formatPrice(price)} (${eff}% eff.)` : '';
+  if(pkgs_el) pkgs_el.textContent = 'IDR '+formatPrice(price);
+}
+
+function addDiscountTier(){
+  const stack = document.getElementById('discountStack');
+  if(!stack) return;
+  const rows = stack.querySelectorAll('.discount-row');
+  const i = rows.length;
+  if(i>=5){ showToast('Max 5 discount tiers'); return; }
+  const row = document.createElement('div');
+  row.className = 'discount-row'; row.id = 'discRow'+i;
+  row.innerHTML = `
+    <span class="disc-label">Tier ${i+1}</span>
+    <input type="number" class="disc-input" id="disc${i}" placeholder="0" min="0" max="100" value="0"
+      style="width:70px;" oninput="recalcDiscount()">
+    <span style="font-size:12px;color:var(--gray);">%</span>
+    <span class="disc-result" id="discResult${i}"></span>
+    <button class="btn-rm-disc" onclick="removeDiscountTier(${i})">✕</button>`;
+  stack.appendChild(row);
+}
+
+function removeDiscountTier(idx){
+  const row = document.getElementById('discRow'+idx);
+  if(row) row.remove();
+  const rows = document.querySelectorAll('#discountStack .discount-row');
+  rows.forEach((r,i)=>{
+    r.id='discRow'+i;
+    const inp=r.querySelector('.disc-input'); if(inp){inp.id='disc'+i;}
+    const lbl=r.querySelector('.disc-label'); if(lbl) lbl.textContent='Tier '+(i+1);
+    const res=r.querySelector('.disc-result'); if(res) res.id='discResult'+i;
+    const btn=r.querySelector('.btn-rm-disc');
+    if(btn&&i>0) btn.setAttribute('onclick','removeDiscountTier('+i+')');
+    if(btn&&i===0) btn.remove();
+  });
+  recalcDiscount();
+}
+window.addDiscountTier=addDiscountTier; window.removeDiscountTier=removeDiscountTier; window.recalcDiscount=recalcDiscount;
+// ────────────────────────────────────────────────────────────
+
 function updateNewPrice(){
   const sel=document.getElementById('newPkg');
   const opt=sel.options[sel.selectedIndex];
-  const price=opt?opt.getAttribute('data-price'):'';
-  document.getElementById('newPriceDisplay').textContent=price?'IDR '+formatPrice(price):'–';
+  const price=opt?Number(opt.getAttribute('data-price')):0;
+  const el=document.getElementById('newPriceDisplay');
+  if(price){ el.textContent='IDR '+formatPrice(price); el.setAttribute('data-base',price); }
+  else { el.textContent='–'; el.removeAttribute('data-base'); }
+  recalcDiscount();
 }
 
 async function registerMember(){
@@ -1818,7 +1926,10 @@ async function registerMember(){
   const phone=document.getElementById('newPhone').value.trim();
   const pkgId=document.getElementById('newPkg').value;
   const startDate=document.getElementById('newStart').value;
-  const discount=Number(document.getElementById('newDiscount').value)||0;
+  // Collect stacked discount tiers
+  const discInputs = document.querySelectorAll('#discountStack .disc-input');
+  const discountTiers = Array.from(discInputs).map(inp=>Math.min(100,Math.max(0,Number(inp.value)||0)));
+  const discount = discountTiers.length ? discountTiers[0] : 0; // keep compat
   if(!name||!phone||!pkgId||!startDate){ showToast('Fill all required fields'); return; }
   showLoading('Registering member…');
   const pkgs=await dbGetPackages();
@@ -1828,12 +1939,14 @@ async function registerMember(){
   const start=new Date(startDate);
   const expiry=new Date(start);
   expiry.setDate(expiry.getDate()+p.days);
-  const discountedPrice=Math.round(p.price*(1-discount/100));
+  // Apply stacked discounts sequentially (not additive)
+  let discountedPrice = p.price;
+  discountTiers.forEach(d=>{ discountedPrice = Math.round(discountedPrice*(1-d/100)); });
   const member={
     code, name, phone, pkgId, pkgName:p.name,
     startDate:start.toISOString().split('T')[0],
     expiryDate:expiry.toISOString().split('T')[0],
-    discount, price:discountedPrice,
+    discount:discountTiers[0]||0, discountTiers, price:discountedPrice,
     registeredAt:new Date().toISOString()
   };
   await dbSaveMember(member);
@@ -1846,7 +1959,7 @@ async function registerMember(){
     Name: <strong style="color:var(--white)">${name}</strong><br>
     Phone: <strong style="color:var(--white)">${phone}</strong><br>
     Package: <strong style="color:var(--white)">${p.name}</strong><br>
-    Price: <strong style="color:var(--blue)">IDR ${formatPrice(discountedPrice)}</strong>${discount?` (${discount}% off)`:''}<br>
+    Price: <strong style="color:var(--blue)">IDR ${formatPrice(discountedPrice)}</strong>${discountTiers.some(d=>d>0)?` (${discountTiers.filter(d=>d>0).map(d=>d+'%').join(' → ')} off)`:''}<br>
     Start: <strong style="color:var(--white)">${member.startDate}</strong><br>
     Expiry: <strong style="color:var(--white)">${member.expiryDate}</strong><br><br>
     <button class="btn btn-primary btn-sm" onclick="showDigitalCard('${code}')">🪪 Generate Digital Card</button>`;
@@ -1854,7 +1967,11 @@ async function registerMember(){
   qrDiv.innerHTML='';
   new QRCode(qrDiv,{text:code,width:128,height:128});
   showToast('✓ Member registered: '+code);
-  ['newName','newPhone','newDiscount'].forEach(id=>document.getElementById(id).value='');
+  ['newName','newPhone'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  // Reset discount tiers back to single row
+  const stack=document.getElementById('discountStack');
+  if(stack){ stack.innerHTML=`<div class="discount-row" id="discRow0"><span class="disc-label">Tier 1</span><input type="number" class="disc-input" id="disc0" placeholder="0" min="0" max="100" value="0" oninput="recalcDiscount()"><span style="font-size:12px;color:var(--gray);">%</span><span class="disc-result" id="discResult0"></span></div>`; }
+  const tot=document.getElementById('discTotal'); if(tot) tot.textContent='';
   document.getElementById('newPkg').value='';
   document.getElementById('newPriceDisplay').textContent='–';
   document.getElementById('newStart').value=new Date().toISOString().split('T')[0];
@@ -1880,14 +1997,133 @@ async function extendMember(code){
 }
 
 async function editDiscount(code){
-  const d=prompt('Enter new discount %:');
-  if(d===null) return;
-  showLoading('Updating…');
-  await dbUpdateMember(code,{discount:Number(d)});
+  // Find member to get current discounts
+  showLoading('Loading…');
+  const members = await dbGetMembers();
+  const m = members.find(x=>normCode(x.code)===normCode(code));
   hideLoading();
-  renderMembersTable();
-  showToast('✓ Discount updated');
+  if(!m) return;
+
+  // Build modal HTML
+  const tiers = Array.isArray(m.discountTiers) && m.discountTiers.length
+    ? m.discountTiers : [m.discount||0];
+
+  let tiersHtml = tiers.map((t,i)=>`
+    <div class="discount-row" id="edDiscRow${i}">
+      <span class="disc-label">Tier ${i+1}</span>
+      <input type="number" class="ed-disc-input" id="edDisc${i}" value="${t}" min="0" max="100"
+        style="width:70px;background:var(--dark3);border:1px solid var(--border);color:var(--white);
+               padding:.4rem .6rem;font-size:13px;outline:none;text-align:center;"
+        oninput="edRecalc()">
+      <span style="font-size:12px;color:var(--gray);">%</span>
+      <span class="disc-result" id="edDiscResult${i}"></span>
+      ${i>0?`<button class="btn-rm-disc" onclick="edRemoveTier(${i})">✕</button>`:''}
+    </div>`).join('');
+
+  const pkg = m.pkgs || {};
+  let basePrice = m.origPrice || m.price || 0;
+  // Try to get original package price
+  const pkgs = await dbGetPackages();
+  const pkgObj = pkgs.find(x=>x.id===m.pkgId);
+  if(pkgObj) basePrice = pkgObj.price;
+
+  // Show in a modal
+  const overlay = document.createElement('div');
+  overlay.id = 'editDiscModal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:3000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  overlay.innerHTML = `
+    <div style="background:var(--dark2);border:1px solid var(--border);width:100%;max-width:460px;">
+      <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-family:var(--font-cond);font-size:16px;letter-spacing:1px;text-transform:uppercase;font-weight:600;">Edit Discount — ${m.name}</span>
+        <button onclick="document.getElementById('editDiscModal').remove()" style="background:none;border:none;color:var(--gray);font-size:20px;cursor:pointer;">✕</button>
+      </div>
+      <div style="padding:1.5rem;">
+        <div style="font-size:12px;color:var(--gray);margin-bottom:1rem;">
+          Base price: <strong style="color:var(--white)">IDR ${formatPrice(basePrice)}</strong>
+        </div>
+        <div class="discount-stack" id="edDiscStack">${tiersHtml}</div>
+        <div style="display:flex;gap:.5rem;margin-top:.5rem;margin-bottom:1.5rem;">
+          <button type="button" class="btn-add-disc" onclick="edAddTier()">+ Add Tier</button>
+          <span style="font-size:13px;color:var(--blue);align-self:center;font-family:var(--font-cond);" id="edDiscTotal"></span>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="saveEditDiscount('${code}',${basePrice})">Save Discount</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  // store basePrice globally for recalc
+  window._edBasePrice = basePrice;
+  edRecalc();
 }
+
+function edRecalc(){
+  const inputs = document.querySelectorAll('.ed-disc-input');
+  let price = window._edBasePrice || 0;
+  inputs.forEach((inp,i)=>{
+    const d = Math.min(100, Math.max(0, Number(inp.value)||0));
+    price = Math.round(price * (1 - d/100));
+    const res = document.getElementById('edDiscResult'+i);
+    if(res) res.textContent = 'IDR '+formatPrice(price);
+  });
+  const total = window._edBasePrice ? Math.round((1 - price/window._edBasePrice)*100*10)/10 : 0;
+  const tot = document.getElementById('edDiscTotal');
+  if(tot) tot.textContent = `Final: IDR ${formatPrice(price)} (${total}% eff.)`;
+}
+
+function edAddTier(){
+  const stack = document.getElementById('edDiscStack');
+  if(!stack) return;
+  const i = stack.querySelectorAll('.discount-row').length;
+  if(i>=5){ showToast('Max 5 discount tiers'); return; }
+  const row = document.createElement('div');
+  row.className = 'discount-row';
+  row.id = 'edDiscRow'+i;
+  row.innerHTML = `
+    <span class="disc-label">Tier ${i+1}</span>
+    <input type="number" class="ed-disc-input" id="edDisc${i}" value="0" min="0" max="100"
+      style="width:70px;background:var(--dark3);border:1px solid var(--border);color:var(--white);
+             padding:.4rem .6rem;font-size:13px;outline:none;text-align:center;"
+      oninput="edRecalc()">
+    <span style="font-size:12px;color:var(--gray);">%</span>
+    <span class="disc-result" id="edDiscResult${i}"></span>
+    <button class="btn-rm-disc" onclick="edRemoveTier(${i})">✕</button>`;
+  stack.appendChild(row);
+  edRecalc();
+}
+
+function edRemoveTier(idx){
+  const row = document.getElementById('edDiscRow'+idx);
+  if(row) row.remove();
+  // Re-number remaining rows
+  const rows = document.querySelectorAll('#edDiscStack .discount-row');
+  rows.forEach((r,i)=>{
+    r.id = 'edDiscRow'+i;
+    const inp = r.querySelector('.ed-disc-input');
+    if(inp){ inp.id='edDisc'+i; inp.setAttribute('oninput','edRecalc()'); }
+    const lbl = r.querySelector('.disc-label');
+    if(lbl) lbl.textContent = 'Tier '+(i+1);
+    const res = r.querySelector('.disc-result');
+    if(res) res.id = 'edDiscResult'+i;
+    const btn = r.querySelector('.btn-rm-disc');
+    if(btn && i>0) btn.setAttribute('onclick','edRemoveTier('+i+')');
+    if(btn && i===0) btn.remove();
+  });
+  edRecalc();
+}
+
+async function saveEditDiscount(code, basePrice){
+  const inputs = document.querySelectorAll('.ed-disc-input');
+  const tiers = Array.from(inputs).map(inp=>Math.min(100,Math.max(0,Number(inp.value)||0)));
+  let price = basePrice;
+  tiers.forEach(d=>{ price = Math.round(price*(1-d/100)); });
+  const effectiveDisc = basePrice ? Math.round((1-price/basePrice)*1000)/10 : 0;
+  showLoading('Saving…');
+  await dbUpdateMember(code,{ discount:effectiveDisc, discountTiers:tiers, price });
+  hideLoading();
+  document.getElementById('editDiscModal')?.remove();
+  renderMembersTable();
+  showToast('✓ Discount saved: '+tiers.map(t=>t+'%').join(' → '));
+}
+window.edRecalc=edRecalc; window.edAddTier=edAddTier; window.edRemoveTier=edRemoveTier; window.saveEditDiscount=saveEditDiscount;
 
 async function deleteMember(code){
   if(!confirm('Delete member '+code+'?\nThis cannot be undone.')) return;
@@ -2235,5 +2471,20 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 });
 
 </script>
+
+<!-- ==================== PROMO POPUP MODAL ==================== -->
+<div id="promoPopupModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:3000;align-items:center;justify-content:center;padding:1rem;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--dark2);border:1px solid var(--border);width:100%;max-width:480px;position:relative;overflow:hidden;">
+    <button onclick="document.getElementById('promoPopupModal').style.display='none'" style="position:absolute;top:.75rem;right:.75rem;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:18px;cursor:pointer;z-index:2;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;">✕</button>
+    <img id="promoPopupImg" src="" alt="" style="width:100%;max-height:360px;object-fit:cover;display:none;">
+    <div style="padding:1.75rem;">
+      <div id="promoPopupTag" style="font-family:var(--font-cond);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:.5rem;display:none;"></div>
+      <div id="promoPopupTitle" style="font-family:var(--font-head);font-size:36px;line-height:1;color:var(--white);margin-bottom:1rem;"></div>
+      <div id="promoPopupDesc" style="font-size:14px;color:rgba(245,245,240,.75);line-height:1.8;margin-bottom:1.5rem;white-space:pre-line;"></div>
+      <a href="https://wa.me/6281339156003" target="_blank" class="btn btn-primary" style="justify-content:center;width:100%;">Claim via WhatsApp</a>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
