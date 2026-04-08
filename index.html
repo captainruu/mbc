@@ -1621,7 +1621,7 @@ function sendCardViaWA(){
   if(phone.startsWith('08')) phone = '62' + phone.slice(1); // 08xx -> 628xx
   if(phone.startsWith('8') && !phone.startsWith('62')) phone = '62' + phone; // 8xx -> 628xx
   // phone now starts with 62
-  const msg = `Halo ${_dcMember.name}! 👋\n\nBerikut informasi membership Muscle Beach Club Anda:\n\n🪪 Member ID: ${_dcMember.code}\n📦 Paket: ${_dcMember.pkgName}\n📅 Berlaku hingga: ${_dcMember.expiryDate}\n\nTunjukkan QR code Anda saat check-in.\n\nSalam,\nMuscle Beach Club 💪`;
+  const msg = `Hello ${_dcMember.name}! 👋\n\nis your membership package information:\n\n🪪 Member ID: ${_dcMember.code}\n📦 Package: ${_dcMember.pkgName}\n📅 Valid until: ${_dcMember.expiryDate}\n\nPlease show your QR code at check-in.\n\nRegards,\nMuscle Beach Club 💪`;
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank');
   showToast('Opening WhatsApp…');
 }
