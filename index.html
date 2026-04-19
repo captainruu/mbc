@@ -138,7 +138,8 @@ section{padding:6rem 0;}
 .promo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem;}
 .promo-card{background:var(--dark2);border:1px solid var(--border);overflow:hidden;cursor:pointer;transition:transform .2s,border-color .2s;}
 .promo-card:hover{transform:translateY(-4px);border-color:var(--blue3);}
-.promo-img{height:200px;object-fit:cover;width:100%;filter:brightness(.7);}
+.promo-img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block;filter:brightness(.85);transition:filter .3s;}
+.promo-card:hover .promo-img{filter:brightness(1);}
 .promo-body{padding:1.25rem;}
 .promo-tag{font-family:var(--font-cond);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--blue);margin-bottom:.4rem;}
 .promo-title{font-family:var(--font-cond);font-size:18px;font-weight:600;}
@@ -1377,21 +1378,47 @@ async function renderPromos(){
 function openPromoPopup(idx){
   const pr = (window._promoData||[])[idx];
   if(!pr) return;
-  const modal = document.getElementById('promoPopupModal');
-  const img   = document.getElementById('promoPopupImg');
-  const tag   = document.getElementById('promoPopupTag');
-  const title = document.getElementById('promoPopupTitle');
-  const desc  = document.getElementById('promoPopupDesc');
-  if(pr.img){ img.src=pr.img; img.style.display='block'; }
-  else { img.style.display='none'; }
-  if(pr.tag){ tag.textContent=pr.tag; tag.style.display='block'; }
-  else { tag.style.display='none'; }
-  title.textContent = pr.title || '';
-  desc.textContent  = pr.desc  || '';
-  modal.style.display='flex';
+
+  const modal    = document.getElementById('promoPopupModal');
+  const imgWrap  = document.getElementById('promoPopupImgWrap');
+  const img      = document.getElementById('promoPopupImg');
+  const caption  = document.getElementById('promoPopupCaption');
+  const tagEl    = document.getElementById('promoPopupTag');
+  const titleEl  = document.getElementById('promoPopupTitle');
+  const descEl   = document.getElementById('promoPopupDesc');
+  const waBtn    = document.getElementById('promoPopupWABtn');
+
+  // --- Poster image (full 4:5, no crop) ---
+  if(pr.img){
+    img.src = pr.img;
+    img.alt = pr.title||'Promo';
+    imgWrap.style.display = 'block';
+  } else {
+    imgWrap.style.display = 'none';
+  }
+
+  // --- Caption (only show if title or tag exists) ---
+  const hasText = !!(pr.title || pr.tag || pr.desc);
+  caption.style.display = hasText ? 'block' : 'none';
+
+  if(pr.tag){ tagEl.textContent=pr.tag; tagEl.style.display='block'; }
+  else { tagEl.style.display='none'; }
+
+  if(pr.title){ titleEl.textContent=pr.title; }
+  else { titleEl.textContent=''; }
+
+  if(pr.desc){ descEl.textContent=pr.desc; descEl.style.display='block'; }
+  else { descEl.style.display='none'; }
+
+  // --- WhatsApp link includes promo title ---
+  const waMsg = `Halo Muscle Beach Club! 👋\n\nSaya tertarik dengan promo *${pr.title||''}*.\n\nBisakah saya mendapatkan info lebih lanjut? 🙏`;
+  waBtn.href = `https://wa.me/6281339156003?text=${encodeURIComponent(waMsg)}`;
+
+  modal.style.display = 'flex';
 }
 window.openPromoPopup=openPromoPopup;
 window.renderPromos=renderPromos;
+
 
 // ============================================================
 // JOIN MODAL
